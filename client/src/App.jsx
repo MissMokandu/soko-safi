@@ -14,8 +14,6 @@ function App() {
     <Router>
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="flex pt-20">
-          <Sidebar />
           <main className="flex-1 ml-72 p-8 min-h-screen flex flex-col">
             <Routes>
               <Route path="/" element={<Dashboard />} />
@@ -28,7 +26,6 @@ function App() {
             <Footer />
           </main>
         </div>
-      </div>
     </Router>
   );
 }
