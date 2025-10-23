@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Diamond, CreditCard, Lock, CheckCircle } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { CreditCard, Lock, CheckCircle } from 'lucide-react'
 import Navbar from '../Components/Layout/Navbar'
 import Footer from '../Components/Layout/Footer'
 
 const CheckoutPage = () => {
-  const navigate = useNavigate()
   const [step, setStep] = useState(1) // 1: Shipping, 2: Payment, 3: Confirmation
   const [shippingInfo, setShippingInfo] = useState({
     fullName: '',
