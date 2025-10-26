@@ -137,7 +137,7 @@ const ProductDetailPage = () => {
 
                 <div className="mb-6">
                   <span className="text-4xl font-bold text-gray-900">
-                    ${product.price.toFixed(2)}
+                    KSH {product.price.toFixed(2)}
                   </span>
                   <span className={`ml-4 text-sm font-medium ${product.inStock ? 'text-green-600' : 'text-red-600'}`}>
                     {product.inStock ? 'In Stock' : 'Out of Stock'}

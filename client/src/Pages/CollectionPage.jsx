@@ -131,7 +131,7 @@ const CollectionPage = () => {
                     <p className="text-sm text-gray-600 mb-3">by {item.artisan}</p>
                     <div className="flex items-center justify-between">
                       <span className="text-xl font-bold text-gray-900">
-                        ${item.price.toFixed(2)}
+                        KSH {item.price.toFixed(2)}
                       </span>
                       <button
                         onClick={() => addToCart(item.id)}
