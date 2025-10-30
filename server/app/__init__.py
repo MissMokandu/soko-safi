@@ -2,11 +2,13 @@ import os
 from flask import Flask
 from app.extensions import db, socketio, session
 from dotenv import load_dotenv
+from flask_cors import CORS
 
 load_dotenv()
 
 def create_app():
     flask_app = Flask(__name__)
+    CORS(flask_app)
     secret_key = os.getenv('SECRET_KEY')
     if not secret_key:
         raise ValueError('SECRET_KEY environment variable is required')

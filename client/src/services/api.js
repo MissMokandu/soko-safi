@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL ;
+const API_URL = 'http://127.0.0.1:5001' ;
 
 // API request helper with comprehensive error handling
 const apiRequest = async (endpoint, options = {}) => {
@@ -92,13 +92,13 @@ const enhanceProduct = (product) => {
 export const api = {
   // Authentication endpoints
   auth: {
-    login: (credentials) => apiRequest('/auth/login', {
+    login: (credentials) => apiRequest('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     }),
     register: async (userData) => {
       try {
-        return await apiRequest('/auth/register', {
+        return await apiRequest('/api/auth/register', {
           method: 'POST',
           body: JSON.stringify(userData),
         });
@@ -108,13 +108,13 @@ export const api = {
       }
     },
     logout: () => apiRequest('/auth/logout', { method: 'POST' }),
-    getSession: () => apiRequest('/auth/session'),
-    getProfile: () => apiRequest('/auth/profile'),
-    updateProfile: (data) => apiRequest('/auth/profile', {
+    getSession: () => apiRequest('/api/auth/session'),
+    getProfile: () => apiRequest('/api/auth/profile'),
+    updateProfile: (data) => apiRequest('/api/auth/profile', {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
-    changePassword: (data) => apiRequest('/auth/change-password', {
+    changePassword: (data) => apiRequest('/api/auth/change-password', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -134,22 +134,22 @@ export const api = {
   products: {
     getAll: async (params) => {
       const query = params ? '?' + new URLSearchParams(params).toString() : '';
-      const products = await apiRequest(`/products/${query}`);
+      const products = await apiRequest(`/api/products/${query}`);
       return Array.isArray(products) ? products.map(enhanceProduct) : [];
     },
     getById: async (id) => {
-      const product = await apiRequest(`/products/${id}`);
+      const product = await apiRequest(`/api/products/${id}`);
       return enhanceProduct(product);
     },
-    create: (data) => apiRequest('/products/', {
+    create: (data) => apiRequest('/api/products/', {
       method: 'POST',
       body: data instanceof FormData ? data : JSON.stringify(data),
     }),
-    update: (id, data) => apiRequest(`/products/${id}`, {
+    update: (id, data) => apiRequest(`/api/products/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
-    delete: (id) => apiRequest(`/products/${id}`, { method: 'DELETE' }),
+    delete: (id) => apiRequest(`/api/products/${id}`, { method: 'DELETE' }),
   },
 
   // Category endpoints
