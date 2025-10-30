@@ -3,8 +3,11 @@ from flask import Flask
 from app.extensions import db, socketio, session
 from dotenv import load_dotenv
 from flask_cors import CORS
+from flask_migrate import Migrate 
 
 load_dotenv()
+
+migrate = Migrate()
 
 def create_app():
     flask_app = Flask(__name__)
@@ -31,8 +34,10 @@ def create_app():
     
     # Initialize extensions
     db.init_app(flask_app)
+    migrate.init_app(flask_app, db) 
     session.init_app(flask_app)
     # Enable CORS for API routes and allow credentials (cookies/session)
+    
     from .extensions import cors, socketio
     cors.init_app(flask_app, resources={
         r"/api/*": {
