@@ -45,7 +45,8 @@ def create_app():
         r"/api/*": {
             "origins": ["https://soko-safi.vercel.app", "https://soko-safi-six.vercel.app", "http://localhost:5173", "http://127.0.0.1:5173"],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization"]
+            "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
+            "supports_credentials": True
         }
     }, supports_credentials=True)
     socketio.init_app(flask_app)
