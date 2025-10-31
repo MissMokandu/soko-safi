@@ -29,6 +29,13 @@ def create_app():
     
     # Cloudinary configuration removed - handled by frontend
     
+    # JWT configuration
+    from flask_jwt_extended import JWTManager
+    from datetime import timedelta
+    flask_app.config['JWT_SECRET_KEY'] = secret_key
+    flask_app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
+    jwt = JWTManager(flask_app)
+    
     # Initialize extensions
     db.init_app(flask_app)
     session.init_app(flask_app)

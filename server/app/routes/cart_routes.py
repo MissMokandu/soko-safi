@@ -107,35 +107,63 @@ class CartItemListResource(Resource):
     def get(self):
         """Get user's cart items - Public access with safe defaults"""
         try:
+            print(f"[CART_GET] Request from {request.remote_addr}")
+            print(f"[CART_GET] Headers: {dict(request.headers)}")
+            
+            from flask_jwt_extended import get_jwt_identity, jwt_required
+            from flask_jwt_extended.exceptions import NoAuthorizationError
+            
+            try:
+                user_id = get_jwt_identity()
+                print(f"[CART_GET] JWT user_id: {user_id}")
+            except:
+                print(f"[CART_GET] No JWT token found")
+                user_id = None
+            
+            print(f"[CART_GET] Returning empty cart for now")
             return [], 200
         except Exception as e:
-            print(f"Cart error: {e}")
+            print(f"[CART_GET] Error: {e}")
             return [], 200
     
     def post(self):
         """Add item to cart - Public access with authentication check"""
         try:
-            from flask import session
+            print(f"[CART_ADD] Request from {request.remote_addr}")
+            print(f"[CART_ADD] Headers: {dict(request.headers)}")
             
-            # Check authentication
-            if not session.get('user_id'):
+            from flask_jwt_extended import get_jwt_identity
+            
+            try:
+                user_id = get_jwt_identity()
+                print(f"[CART_ADD] JWT user_id: {user_id}")
+            except:
+                print(f"[CART_ADD] No JWT token found")
                 return {'error': 'Authentication required'}, 401
             
             data = request.json or {}
+            print(f"[CART_ADD] Request data: {data}")
+            
             if not data.get('product_id'):
+                print(f"[CART_ADD] Missing product_id")
                 return {'error': 'product_id is required'}, 400
             
-            return {
+            print(f"[CART_ADD] User {user_id} adding product {data.get('product_id')} quantity {data.get('quantity', 1)}")
+            
+            result = {
                 'message': 'Item added to cart successfully',
                 'cart_item': {
                     'id': 1,
                     'product_id': data.get('product_id'),
                     'quantity': data.get('quantity', 1)
                 }
-            }, 201
+            }
+            
+            print(f"[CART_ADD] Success: {result}")
+            return result, 201
             
         except Exception as e:
-            print(f"Cart add error: {e}")
+            print(f"[CART_ADD] Error: {e}")
             return {'error': 'Failed to add item to cart'}, 500
 
 class CartItemResource(Resource):

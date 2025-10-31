@@ -10,8 +10,13 @@ class ProductListResource(Resource):
     def get(self):
         """Get all products"""
         try:
+            print(f"[PRODUCT_LIST] Request from {request.remote_addr}")
+            print(f"[PRODUCT_LIST] Query params: {dict(request.args)}")
+            
             products = Product.query.filter_by(status='active').all()
-            return [{
+            print(f"[PRODUCT_LIST] Found {len(products)} active products")
+            
+            result = [{
                 'id': p.id,
                 'title': p.title,
                 'price': p.price,
@@ -21,7 +26,11 @@ class ProductListResource(Resource):
                 'currency': p.currency,
                 'status': p.status
             } for p in products]
-        except Exception:
+            
+            print(f"[PRODUCT_LIST] Returning {len(result)} products to client")
+            return result
+        except Exception as e:
+            print(f"[PRODUCT_LIST] Error: {str(e)}")
             return []
     
     def post(self):
@@ -72,11 +81,16 @@ class ProductResource(Resource):
     def get(self, product_id):
         """Get product details"""
         try:
+            print(f"[PRODUCT_DETAIL] Request from {request.remote_addr} for product {product_id}")
+            
             product = Product.query.get(product_id)
             if not product:
+                print(f"[PRODUCT_DETAIL] Product {product_id} not found")
                 return {'error': 'Product not found'}, 404
             
-            return {
+            print(f"[PRODUCT_DETAIL] Found product: {product.title} (ID: {product.id}, Price: {product.price})")
+            
+            result = {
                 'id': product.id,
                 'title': product.title,
                 'price': product.price,
@@ -86,7 +100,11 @@ class ProductResource(Resource):
                 'image_url': product.image_url,
                 'status': product.status
             }
-        except Exception:
+            
+            print(f"[PRODUCT_DETAIL] Returning product details for {product.title}")
+            return result
+        except Exception as e:
+            print(f"[PRODUCT_DETAIL] Error for product {product_id}: {str(e)}")
             return {'error': 'Product not found'}, 404
     
     def put(self, product_id):

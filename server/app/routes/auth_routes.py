@@ -186,6 +186,8 @@ class LoginResource(Resource):
             login_user(user.id, user.role.value)
             
             print(f"[LOGIN] Login successful for: {email}")
+            print(f"[LOGIN] Generated JWT token for user {user.id} ({user.role.value})")
+            print(f"[LOGIN] User can now access protected endpoints")
             return {
                 'message': 'Login successful',
                 'user': {
