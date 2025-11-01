@@ -162,14 +162,14 @@ const ArtisanDashboard = () => {
     if (file) {
       try {
         setProfileLoading(true)
-        const uploadResult = await api.profile.uploadImage(file)
+        const imageUrl = await uploadToCloudinary(file)
         setProfileData(prev => ({
           ...prev,
-          profile_picture_url: uploadResult.url
+          profile_picture_url: imageUrl
         }))
         // Update profile with new picture URL
         await api.profile.update({
-          profile_picture_url: uploadResult.url
+          profile_picture_url: imageUrl
         })
         alert('Profile picture updated successfully!')
       } catch (error) {
@@ -358,10 +358,9 @@ const ArtisanDashboard = () => {
                 <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
                   {profileData.profile_picture_url ? (
                     <img
-                      src={profileData.profile_picture_url.startsWith('http') ? profileData.profile_picture_url : ''}
+                      src={profileData.profile_picture_url}
                       alt="Profile"
                       className="w-full h-full object-cover"
-                      onError={(e) => { e.target.style.display = 'none'; }}
                     />
                   ) : (
                     <User className="w-5 h-5 text-white" />
@@ -525,7 +524,7 @@ const ArtisanDashboard = () => {
                           <div className="flex items-start space-x-4 mb-4">
                             <div className="relative">
                               <img
-                                src={product.image}
+                                src={product.image_url || product.image}
                                 alt={product.title}
                                 className="w-24 h-24 rounded-xl object-cover shadow-md"
                               />

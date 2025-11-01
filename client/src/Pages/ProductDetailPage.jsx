@@ -81,7 +81,7 @@ const ProductDetailPage = () => {
     images:
       product.images && product.images.length
         ? product.images
-        : ["/images/placeholder.svg"],
+        : [product.image_url || product.image || "/images/placeholder.svg"],
     category: product.category || "Handcraft",
     subcategory: product.subcategory || "Art",
     inStock: product.stock > 0,
@@ -231,7 +231,7 @@ const ProductDetailPage = () => {
             <div className="space-y-4">
               <div className="bg-white rounded-2xl overflow-hidden shadow-sm relative group">
                 <LazyImage
-                  src={productWithDefaults.images[activeImage] || '/images/placeholder.svg'}
+                  src={productWithDefaults.images[activeImage] || product.image_url || product.image || '/images/placeholder.svg'}
                   alt={product.title}
                   className="w-full h-[500px] object-cover"
                 />
@@ -249,7 +249,7 @@ const ProductDetailPage = () => {
                     }`}
                   >
                     <LazyImage
-                      src={image}
+                      src={image || product.image_url || product.image || '/images/placeholder.svg'}
                       alt={`${product.title} ${index + 1}`}
                       className="w-full h-24 object-cover"
                     />
@@ -561,7 +561,7 @@ const ProductDetailPage = () => {
                 >
                   <div className="aspect-square overflow-hidden">
                     <LazyImage
-                      src={relatedProduct.image}
+                      src={relatedProduct.image_url || relatedProduct.image || '/images/placeholder.jpg'}
                       alt={relatedProduct.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
