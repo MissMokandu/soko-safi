@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { Star, MapPin, MessageSquare, Award, Package, Camera, Edit } from "lucide-react";
-import DashboardNavbar from "../Components/Layout/DashboardNavbar";
-import BuyerSidebar from "../Components/Layout/BuyerSidebar";
+import BuyerLayout from "./Buyer/BuyerLayout";
 import { api } from '../services/api';
 import { uploadToCloudinary } from '../services/cloudinary';
 import { useAuth } from '../context/AuthContext';
 
 const ArtisanProfilePage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("products");
+  const [sidebarTab, setSidebarTab] = useState("explore");
   const [artisan, setArtisan] = useState(null);
   const [products, setProducts] = useState([]);
   const [stats, setStats] = useState(null);
@@ -25,6 +26,11 @@ const ArtisanProfilePage = () => {
   });
 
   const isOwner = user && user.id === id;
+
+  const handleSidebarClick = (tab) => {
+    setSidebarTab(tab);
+    navigate('/buyer-dashboard');
+  };
 
   useEffect(() => {
     fetchArtisanData();
@@ -121,12 +127,8 @@ const ArtisanProfilePage = () => {
 
 
   return (
-    <div className="h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
-      <DashboardNavbar />
-      <div className="flex flex-1 overflow-hidden">
-        <BuyerSidebar />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 animate-fade-in">
-          <div className="max-w-7xl mx-auto">
+    <BuyerLayout activeTab={sidebarTab} setActiveTab={handleSidebarClick}>
+      <div className="max-w-7xl mx-auto">
             {/* Cover Image */}
             <div
               className="h-48 bg-cover bg-center relative rounded-2xl mb-6"
@@ -386,10 +388,8 @@ const ArtisanProfilePage = () => {
               )}
             </div>
           </div>
-          </div>
-        </main>
       </div>
-    </div>
+    </BuyerLayout>
   );
 };
 

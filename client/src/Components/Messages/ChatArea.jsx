@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import MessageBubble from './MessageBubble'
 import MessageInput from './MessageInput'
 
@@ -8,12 +9,10 @@ const ChatArea = ({
   searchQuery,
   messageText,
   setMessageText,
-  selectedFile,
-  previewUrl,
-  onFileSelect,
-  onClearAttachment,
   onSendMessage,
-  sending
+  sending,
+  showBackButton = false,
+  onBackClick
 }) => {
   const filteredMessages = searchQuery ? 
     messages.filter(msg => 
@@ -30,8 +29,16 @@ const ChatArea = ({
 
   return (
     <div className="flex-1 flex flex-col">
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+      <div className="p-4 border-b border-gray-200">
         <div className="flex items-center space-x-3">
+          {showBackButton && (
+            <button
+              onClick={onBackClick}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors mr-2"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
           <img 
             src={currentConversation.artisan.avatar} 
             alt={currentConversation.artisan.name}
@@ -49,12 +56,6 @@ const ChatArea = ({
             </p>
           </div>
         </div>
-        <Link 
-          to={`/artisan/${currentConversation.artisan.id}`}
-          className="btn-secondary text-sm px-4 py-2"
-        >
-          View Profile
-        </Link>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -73,10 +74,6 @@ const ChatArea = ({
       <MessageInput
         messageText={messageText}
         setMessageText={setMessageText}
-        selectedFile={selectedFile}
-        previewUrl={previewUrl}
-        onFileSelect={onFileSelect}
-        onClearAttachment={onClearAttachment}
         onSendMessage={onSendMessage}
         sending={sending}
       />
