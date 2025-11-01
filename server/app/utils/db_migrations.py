@@ -42,5 +42,7 @@ def ensure_deleted_at_columns(app):
                     conn.commit()
             except Exception as e:
                 # Log error but don't raise to prevent app startup failure
+                pass
         else:
             # For other DBs, log and skip - migrations required
+            pass
