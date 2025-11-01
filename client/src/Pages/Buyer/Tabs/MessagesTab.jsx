@@ -6,16 +6,8 @@ import ChatArea from '../../../Components/Messages/ChatArea'
 import { formatMessageTime } from '../../../utils/dateUtils'
 
 const MessagesTab = ({ messages, loading, authLoading, initialArtisanId }) => {
-    initialArtisanId, 
-    messagesCount: messages?.length, 
-    loading, 
-    authLoading 
-  })
-  
   const [selectedConversationId, setSelectedConversationId] = useState(null)
   const [messageText, setMessageText] = useState('')
-  
-  
   const {
     conversations,
     messages: chatMessages,
@@ -31,12 +23,6 @@ const MessagesTab = ({ messages, loading, authLoading, initialArtisanId }) => {
       setSelectedConversationId(initialArtisanId)
     }
   }, [initialArtisanId, selectedConversationId])
-  
-    conversationsCount: conversations?.length,
-    chatMessagesCount: chatMessages?.length,
-    selectedConversation,
-    sending
-  })
   
   const currentConversation = conversations.find(c => c.id === (selectedConversation || initialArtisanId))
   
