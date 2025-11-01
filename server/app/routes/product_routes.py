@@ -8,15 +8,10 @@ product_api = Api(product_bp)
 
 class ProductListResource(Resource):
     def get(self):
-        """Get all products"""
         try:
-            print(f"[PRODUCT_LIST] Request from {request.remote_addr}")
-            print(f"[PRODUCT_LIST] Query params: {dict(request.args)}")
-            
             products = Product.query.filter_by(status='active').all()
-            print(f"[PRODUCT_LIST] Found {len(products)} active products")
-            
-            result = [{
+            print(f"Found {len(products)} products in database")
+            return [{
                 'id': p.id,
                 'title': p.title,
                 'price': p.price,
@@ -24,17 +19,14 @@ class ProductListResource(Resource):
                 'image_url': p.image_url,
                 'stock': p.stock,
                 'currency': p.currency,
-                'status': p.status
+                'status': p.status,
+                'artisan_id': p.artisan_id
             } for p in products]
-            
-            print(f"[PRODUCT_LIST] Returning {len(result)} products to client")
-            return result
         except Exception as e:
-            print(f"[PRODUCT_LIST] Error: {str(e)}")
+            print(f"Error fetching products: {e}")
             return []
     
     def post(self):
-        """Create new product"""
         try:
             if request.is_json:
                 data = request.json or {}
@@ -79,18 +71,25 @@ class ProductListResource(Resource):
 
 class ProductResource(Resource):
     def get(self, product_id):
-        """Get product details"""
         try:
-            print(f"[PRODUCT_DETAIL] Request from {request.remote_addr} for product {product_id}")
-            
             product = Product.query.get(product_id)
             if not product:
-                print(f"[PRODUCT_DETAIL] Product {product_id} not found")
                 return {'error': 'Product not found'}, 404
             
-            print(f"[PRODUCT_DETAIL] Found product: {product.title} (ID: {product.id}, Price: {product.price})")
+            # Get artisan data
+            artisan_data = None
+            if product.artisan_id:
+                from app.models.user import User
+                artisan = User.query.get(product.artisan_id)
+                if artisan:
+                    artisan_data = {
+                        'id': artisan.id,
+                        'full_name': artisan.full_name,
+                        'email': artisan.email,
+                        'profile_image': getattr(artisan, 'profile_image', None)
+                    }
             
-            result = {
+            return {
                 'id': product.id,
                 'title': product.title,
                 'price': product.price,
@@ -98,17 +97,14 @@ class ProductResource(Resource):
                 'stock': product.stock,
                 'currency': product.currency,
                 'image_url': product.image_url,
-                'status': product.status
+                'status': product.status,
+                'artisan_id': product.artisan_id,
+                'artisan': artisan_data
             }
-            
-            print(f"[PRODUCT_DETAIL] Returning product details for {product.title}")
-            return result
-        except Exception as e:
-            print(f"[PRODUCT_DETAIL] Error for product {product_id}: {str(e)}")
+        except Exception:
             return {'error': 'Product not found'}, 404
     
     def put(self, product_id):
-        """Update product"""
         try:
             product = Product.query.get(product_id)
             if not product:
@@ -133,7 +129,6 @@ class ProductResource(Resource):
             return {'error': 'Failed to update product'}, 500
     
     def delete(self, product_id):
-        """Delete product"""
         try:
             product = Product.query.get(product_id)
             if not product:

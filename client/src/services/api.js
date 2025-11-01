@@ -73,7 +73,9 @@ const apiRequest = async (endpoint, options = {}) => {
 // Helper to enhance product data
 const enhanceProduct = (product) => {
   if (!product) return product;
-  return {
+  console.log('[ENHANCE_PRODUCT] Original product:', product);
+  console.log('[ENHANCE_PRODUCT] Original artisan_id:', product.artisan_id);
+  const enhanced = {
     ...product,
     price:
       typeof product.price === "string"
@@ -86,12 +88,15 @@ const enhanceProduct = (product) => {
     currency: product.currency || "KSh",
     image: product.image_url || product.image || "/images/placeholder.jpg",
     image_url: product.image_url || product.image || "/images/placeholder.jpg",
+    artisan_id: product.artisan_id, // Explicitly preserve artisan_id
     artisan_name: product.artisan_name || "Unknown Artisan",
     location: product.location || "Kenya",
     rating: product.rating || 4.5,
     review_count: product.review_count || 0,
     in_stock: product.stock > 0,
   };
+  console.log('[ENHANCE_PRODUCT] Enhanced product artisan_id:', enhanced.artisan_id);
+  return enhanced;
 };
 
 export const api = {
@@ -359,6 +364,15 @@ export const api = {
 
   // Review endpoints
   reviews: {
+    getAll: async () => {
+      try {
+        const reviews = await apiRequest("/reviews/")
+        return Array.isArray(reviews) ? reviews : []
+      } catch (error) {
+        console.warn("Reviews getAll failed:", error.message)
+        return []
+      }
+    },
     getByProduct: (productId) => apiRequest(`/reviews/product/${productId}`),
     create: (data) =>
       apiRequest("/reviews/", {

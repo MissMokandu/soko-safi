@@ -14,7 +14,7 @@ review_api = Api(review_bp)
 class ReviewListResource(Resource):
     def get(self):
         """Get all reviews - Public access"""
-        reviews = Review.query.filter_by(deleted_at=None).all()
+        reviews = Review.query.all()
         return [{
             'id': r.id,
             'product_id': r.product_id,
@@ -103,8 +103,7 @@ class ReviewResource(Resource):
     def delete(self, review_id):
         """Delete review - Owner or Admin only"""
         review = Review.query.get_or_404(review_id)
-        from datetime import datetime
-        review.deleted_at = datetime.utcnow()
+        db.session.delete(review)
         db.session.commit()
         
         return {'message': 'Review deleted successfully'}, 200

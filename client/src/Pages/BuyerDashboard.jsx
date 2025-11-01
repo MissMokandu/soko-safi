@@ -235,9 +235,13 @@ const BuyerDashboard = ({ authLoading = false }) => {
   const loadProductDetails = async (productId) => {
     try {
       setProductLoading(true);
+      console.log('[PRODUCT_DETAILS] Fetching product details for ID:', productId);
       const product = await api.products.getById(productId);
+      console.log('[PRODUCT_DETAILS] Product details received:', product);
+      console.log('[PRODUCT_DETAILS] Artisan ID in product:', product.artisan_id);
       setSelectedProduct(product);
     } catch (error) {
+      console.error('[PRODUCT_DETAILS] Failed to fetch product details:', error);
       handleAuthError(error, "loadProductDetails");
       setError("Failed to load product details. Please try again.");
     } finally {

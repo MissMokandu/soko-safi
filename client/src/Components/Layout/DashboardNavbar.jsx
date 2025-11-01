@@ -35,12 +35,15 @@ const DashboardNavbar = () => {
             <span className="text-xl font-bold text-gray-900">SokoDigital</span>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <Link to="/cart" className="p-3 text-gray-600 hover:text-primary-600 rounded-xl hover:bg-primary-50 transition-all duration-200 hover:scale-110">
+          <div className="flex items-center space-x-2 lg:space-x-4">
+            <Link to="/cart" className="lg:hidden p-2 text-gray-600 hover:text-primary-600 rounded-xl hover:bg-primary-50 transition-all duration-200 hover:scale-110 mr-12">
+              <ShoppingCart className="w-5 h-5" />
+            </Link>
+            <Link to="/cart" className="hidden lg:block p-3 text-gray-600 hover:text-primary-600 rounded-xl hover:bg-primary-50 transition-all duration-200 hover:scale-110">
               <ShoppingCart className="w-5 h-5" />
             </Link>
 
-            <div className="relative group">
+            <div className="relative group hidden lg:block">
               <button className="flex items-center space-x-2 p-1.5 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors">
                 {profilePicture || user?.profile_picture_url ? (
                   <img
