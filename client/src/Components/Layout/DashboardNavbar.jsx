@@ -26,9 +26,17 @@ const DashboardNavbar = () => {
             </button>
             <div className="relative group">
               <button className="flex items-center space-x-2 p-1.5 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors">
-                <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center shadow-sm">
-                  <User className="w-5 h-5 text-white" />
-                </div>
+                {user?.profile_picture_url ? (
+                  <img
+                    src={user.profile_picture_url}
+                    alt={user?.full_name || 'User'}
+                    className="w-9 h-9 rounded-full object-cover shadow-sm"
+                  />
+                ) : (
+                  <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center shadow-sm">
+                    <User className="w-5 h-5 text-white" />
+                  </div>
+                )}
               </button>
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="py-2">
