@@ -11,14 +11,6 @@ export const useMessages = (id, isAuthenticated) => {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState(null)
   const initializationRef = useRef(new Set())
-  
-    conversationsCount: conversations.length, 
-    messagesCount: messages.length, 
-    selectedConversation, 
-    loading, 
-    sending, 
-    error 
-  })
 
   const loadConversations = async () => {
     try {
@@ -60,7 +52,6 @@ export const useMessages = (id, isAuthenticated) => {
       setLoading(true)
       const response = await api.messages.initConversation(userId)
       const conversation = response.conversation
-      
       
       setConversations(prev => {
         const exists = prev.find(c => c.id == userId)
