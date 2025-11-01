@@ -5,6 +5,7 @@ Handles user registration, login, logout, and profile management
 
 from flask import Blueprint, request, jsonify, session
 from flask_restful import Resource, Api
+from flask_jwt_extended import create_access_token
 from app.models import db, User, UserRole
 from app.auth import hash_password, verify_password, login_user, logout_user, get_current_user, require_auth, require_ownership_or_role
 import re
@@ -100,8 +101,12 @@ class RegisterResource(Resource):
             # Log in the user automatically after registration
             login_user(user.id, user.role.value)
             
+            # Create JWT token
+            access_token = create_access_token(identity=user.id)
+            
             return {
                 'message': 'User registered successfully',
+                'token': access_token,
                 'user': {
                     'id': user.id,
                     'email': user.email,
@@ -157,8 +162,14 @@ class LoginResource(Resource):
             # Log in the user
             login_user(user.id, user.role.value)
             
+            # Create JWT token
+            access_token = create_access_token(identity=user.id)
+            
+            print(f"[BACKEND_LOGIN] Generated token for user {user.id}: {access_token[:20]}...")
+            
             return {
                 'message': 'Login successful',
+                'token': access_token,
                 'user': {
                     'id': user.id,
                     'email': user.email,
