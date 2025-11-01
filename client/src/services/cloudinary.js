@@ -3,11 +3,8 @@ const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
 
 export const uploadToCloudinary = async (file) => {
   try {
-    // For development/testing, return a placeholder URL instead of uploading
-    if (import.meta.env.DEV) {
-      console.log('Development mode: Skipping Cloudinary upload, using placeholder')
-      return '/images/placeholder.jpg'
-    }
+    // Upload to Cloudinary in all environments
+    console.log('Uploading to Cloudinary...')
 
     if (!CLOUDINARY_CLOUD_NAME) {
       throw new Error('Cloudinary cloud name not configured')

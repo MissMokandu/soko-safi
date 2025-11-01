@@ -204,7 +204,7 @@ const MessagesPage = () => {
         attachment_name: selectedFile?.name
       }
       
-      const result = await api.messages.send(receiverId, messageData.message)
+      const result = await api.messages.send(receiverId, messageData)
       
       const newMessage = {
         id: result.message_data?.id || Date.now(),

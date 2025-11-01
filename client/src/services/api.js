@@ -53,7 +53,8 @@ const enhanceProduct = (product) => {
     price: typeof product.price === 'string' ? parseFloat(product.price) : product.price,
     stock: typeof product.stock === 'string' ? parseInt(product.stock) : product.stock,
     currency: product.currency || 'KSh',
-    image: product.image || '/images/placeholder.jpg',
+    image: product.image_url || product.image || '/images/placeholder.jpg',
+    image_url: product.image_url || product.image || '/images/placeholder.jpg',
     artisan_name: product.artisan_name || 'Unknown Artisan',
     location: product.location || 'Kenya',
     rating: product.rating || 4.5,
@@ -335,10 +336,16 @@ export const api = {
       }
     },
     getMessages: (userId) => apiRequest(`/messages/${userId}`),
-    send: (receiverId, content) => apiRequest('/messages/', {
-      method: 'POST',
-      body: JSON.stringify({ receiver_id: receiverId, message: content }),
-    }),
+    send: (receiverId, messageData) => {
+      const data = typeof messageData === 'string' 
+        ? { receiver_id: receiverId, message: messageData }
+        : { receiver_id: receiverId, ...messageData }
+      
+      return apiRequest('/messages/', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    },
     sendWithAttachment: (receiverId, message, file) => {
       const formData = new FormData()
       formData.append('receiver_id', receiverId)

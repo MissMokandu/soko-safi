@@ -220,7 +220,7 @@ const ExplorePage = () => {
                   } overflow-hidden`}
                 >
                   <LazyImage
-                    src={work.image}
+                    src={work.image_url || work.image || '/images/placeholder.jpg'}
                     alt={work.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
