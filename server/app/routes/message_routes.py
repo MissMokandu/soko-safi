@@ -24,8 +24,8 @@ class MessageListResource(Resource):
             'id': m.id,
             'sender_id': m.sender_id,
             'receiver_id': m.receiver_id,
-            'message': m.message,
-            'timestamp': m.timestamp.isoformat() if m.timestamp else None,
+            'message': m.message_text,
+            'timestamp': m.created_at.isoformat() if m.created_at else None,
             'is_read': m.is_read
         } for m in messages]
     
@@ -33,7 +33,7 @@ class MessageListResource(Resource):
     def post(self):
         """Create new message - Authenticated users only"""
         from flask import session
-        from app.models.message import MessageType, MessageStatus
+
         
         data = request.json or {}
         
@@ -50,21 +50,16 @@ class MessageListResource(Resource):
         if not message_text and not attachment_url:
             return {'error': 'Either message text or attachment is required'}, 400
         
-        # Determine message type
-        try:
-            message_type = MessageType(message_type_str)
-        except ValueError:
-            message_type = MessageType.TEXT
+        # Message type is always text for now
+        message_type = 'text'
         
         # Create message
         message = Message(
             sender_id=session.get('user_id'),
             receiver_id=data.get('receiver_id'),
-            message=message_text or f'Sent {message_type.value}',
-            message_type=message_type,
-            attachment_url=attachment_url,
-            attachment_name=attachment_name,
-            status=MessageStatus.SENT
+            message_text=message_text or 'Sent attachment',
+            media_url=attachment_url,
+            status='sent'
         )
         
         try:
@@ -80,11 +75,9 @@ class MessageListResource(Resource):
                 'id': message.id,
                 'sender_id': message.sender_id,
                 'receiver_id': message.receiver_id,
-                'message': message.message,
-                'message_type': message.message_type.value,
-                'attachment_url': message.attachment_url,
-                'attachment_name': message.attachment_name,
-                'status': message.status.value
+                'message': message.message_text,
+                'media_url': message.media_url,
+                'status': message.status
             }
         }, 201
 
@@ -106,8 +99,8 @@ class MessageResource(Resource):
             'id': message.id,
             'sender_id': message.sender_id,
             'receiver_id': message.receiver_id,
-            'message': message.message,
-            'timestamp': message.timestamp.isoformat() if message.timestamp else None,
+            'message': message.message_text,
+            'timestamp': message.created_at.isoformat() if message.created_at else None,
             'is_read': message.is_read
         }
     
@@ -132,7 +125,7 @@ class MessageResource(Resource):
         
         # Only sender or admin can update message content
         if 'message' in data and (message.sender_id == current_user_id or user_role == 'admin'):
-            message.message = data['message']
+            message.message_text = data['message']
         
         if 'sender_id' in data and user_role == 'admin':
             message.sender_id = data['sender_id']
@@ -147,7 +140,7 @@ class MessageResource(Resource):
                 'id': message.id,
                 'sender_id': message.sender_id,
                 'receiver_id': message.receiver_id,
-                'message': message.message,
+                'message': message.message_text,
                 'is_read': message.is_read
             }
         }, 200
@@ -165,8 +158,8 @@ class MessageResource(Resource):
         if user_role != 'admin' and message.sender_id != current_user_id and message.receiver_id != current_user_id:
             return {'error': 'Access denied'}, 403
         
-        from datetime import datetime
-        message.deleted_at = datetime.utcnow()
+        # Soft delete by updating status
+        message.status = 'deleted'
         db.session.commit()
         
         return {'message': 'Message deleted successfully'}, 200
@@ -185,20 +178,19 @@ class MessageConversationsResource(Resource):
         subquery = db.session.query(
             func.greatest(Message.sender_id, Message.receiver_id).label('user1'),
             func.least(Message.sender_id, Message.receiver_id).label('user2'),
-            func.max(Message.timestamp).label('latest_timestamp')
+            func.max(Message.created_at).label('latest_timestamp')
         ).filter(
             db.or_(
                 Message.sender_id == current_user_id,
                 Message.receiver_id == current_user_id
-            ),
-            Message.deleted_at.is_(None)
+            )
         ).group_by('user1', 'user2').subquery()
 
         # Get the actual latest messages
         latest_messages = db.session.query(Message).join(
             subquery,
             db.and_(
-                Message.timestamp == subquery.c.latest_timestamp,
+                Message.created_at == subquery.c.latest_timestamp,
                 db.or_(
                     db.and_(
                         Message.sender_id == subquery.c.user1,
@@ -210,7 +202,7 @@ class MessageConversationsResource(Resource):
                     )
                 )
             )
-        ).order_by(desc(Message.timestamp)).all()
+        ).order_by(desc(Message.created_at)).all()
 
         conversations = []
         for msg in latest_messages:
@@ -222,8 +214,7 @@ class MessageConversationsResource(Resource):
                 unread_count = Message.query.filter_by(
                     sender_id=partner_id,
                     receiver_id=current_user_id,
-                    is_read=False,
-                    deleted_at=None
+                    is_read=False
                 ).count()
 
                 # Get user avatar from profile or generate one
@@ -237,8 +228,8 @@ class MessageConversationsResource(Resource):
                         'avatar': avatar_url,
                         'online': False  # TODO: Implement online status
                     },
-                    'lastMessage': msg.message,
-                    'lastMessageTime': msg.timestamp.strftime('%H:%M') if msg.timestamp else '',
+                    'lastMessage': msg.message_text,
+                    'lastMessageTime': msg.created_at.strftime('%H:%M') if msg.created_at else '',
                     'unread': unread_count
                 })
 
@@ -258,20 +249,17 @@ class ConversationMessagesResource(Resource):
             db.or_(
                 db.and_(Message.sender_id == current_user_id, Message.receiver_id == user_id),
                 db.and_(Message.sender_id == user_id, Message.receiver_id == current_user_id)
-            ),
-            Message.deleted_at.is_(None)
-        ).order_by(Message.timestamp.asc()).limit(100).all()  # Limit to last 100 messages for performance
+            )
+        ).order_by(Message.created_at.asc()).limit(100).all()  # Limit to last 100 messages for performance
 
         # Mark messages from the other user as read and delivered
-        from app.models.message import MessageStatus
         Message.query.filter_by(
             sender_id=user_id,
             receiver_id=current_user_id,
-            is_read=False,
-            deleted_at=None
+            is_read=False
         ).update({
             'is_read': True,
-            'status': MessageStatus.read
+            'status': 'read'
         })
         db.session.commit()
 
@@ -280,12 +268,12 @@ class ConversationMessagesResource(Resource):
             formatted_messages.append({
                 'id': msg.id,
                 'sender': 'buyer' if msg.sender_id == current_user_id else 'artisan',
-                'text': msg.message,
-                'time': msg.timestamp.strftime('%H:%M') if msg.timestamp else '',
-                'message_type': msg.message_type.value if msg.message_type else 'text',
-                'attachment_url': msg.attachment_url,
-                'attachment_name': msg.attachment_name,
-                'status': msg.status.value if msg.status else 'sent',
+                'text': msg.message_text,
+                'time': msg.created_at.strftime('%H:%M') if msg.created_at else '',
+                'message_type': 'text',
+                'attachment_url': msg.media_url,
+                'attachment_name': None,
+                'status': msg.status or 'sent',
                 'is_read': msg.is_read
             })
 
@@ -296,7 +284,7 @@ class MessageStatusResource(Resource):
     def put(self, message_id):
         """Update message status (delivered/read)"""
         from flask import session
-        from app.models.message import MessageStatus
+
         
         message = Message.query.get_or_404(message_id)
         current_user_id = session.get('user_id')
@@ -309,7 +297,7 @@ class MessageStatusResource(Resource):
         
         if 'status' in data:
             try:
-                message.status = MessageStatus(data['status'])
+                message.status = data['status']
                 if data['status'] == 'read':
                     message.is_read = True
                 db.session.commit()
@@ -318,12 +306,72 @@ class MessageStatusResource(Resource):
         
         return {
             'message': 'Status updated successfully',
-            'status': message.status.value
+            'status': message.status
         }, 200
+
+class ConversationInitResource(Resource):
+    @require_auth
+    def post(self, user_id):
+        """Initialize conversation with a user"""
+        from flask import session
+        from app.models import User
+        
+        current_user_id = session.get('user_id')
+        
+        # Check if target user exists
+        target_user = User.query.get(user_id)
+        if not target_user:
+            return {'error': 'User not found'}, 404
+        
+        # Check if conversation already exists
+        existing_message = Message.query.filter(
+            db.or_(
+                db.and_(Message.sender_id == current_user_id, Message.receiver_id == user_id),
+                db.and_(Message.sender_id == user_id, Message.receiver_id == current_user_id)
+            )
+        ).first()
+        
+        if existing_message:
+            # Conversation exists, return conversation info
+            avatar_url = target_user.profile_picture_url if hasattr(target_user, 'profile_picture_url') and target_user.profile_picture_url else f'https://ui-avatars.com/api/?name={target_user.full_name or "User"}&background=6366f1&color=fff'
+            
+            return {
+                'conversation': {
+                    'id': user_id,
+                    'artisan': {
+                        'id': user_id,
+                        'name': target_user.full_name or 'Unknown User',
+                        'avatar': avatar_url,
+                        'online': False
+                    },
+                    'lastMessage': existing_message.message_text,
+                    'lastMessageTime': existing_message.created_at.strftime('%H:%M') if existing_message.created_at else '',
+                    'unread': 0
+                }
+            }, 200
+        
+        # No conversation exists, create placeholder conversation
+        avatar_url = target_user.profile_picture_url if hasattr(target_user, 'profile_picture_url') and target_user.profile_picture_url else f'https://ui-avatars.com/api/?name={target_user.full_name or "User"}&background=6366f1&color=fff'
+        
+        return {
+            'conversation': {
+                'id': user_id,
+                'artisan': {
+                    'id': user_id,
+                    'name': target_user.full_name or 'Unknown User',
+                    'avatar': avatar_url,
+                    'online': False
+                },
+                'lastMessage': 'Start a conversation...',
+                'lastMessageTime': '',
+                'unread': 0
+            }
+        }, 201
 
 # Register routes
 message_api.add_resource(MessageListResource, '/')
 message_api.add_resource(MessageResource, '/<message_id>')
 message_api.add_resource(MessageStatusResource, '/<message_id>/status')
 message_api.add_resource(MessageConversationsResource, '/conversations')
-message_api.add_resource(ConversationMessagesResource, '/<user_id>')
+message_api.add_resource(ConversationMessagesResource, '/conversation/<user_id>')
+message_api.add_resource(ConversationInitResource, '/init/<user_id>')

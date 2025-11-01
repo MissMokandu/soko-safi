@@ -22,7 +22,7 @@ const ProductPage = lazy(() => import("./Pages/ProductPage"));
 const CartPage = lazy(() => import("./Pages/CartPage"));
 const CheckoutPage = lazy(() => import("./Pages/CheckoutPage"));
 const CollectionPage = lazy(() => import("./Pages/CollectionPage"));
-const MessagesPage = lazy(() => import("./Pages/MessagesPage"));
+const MessagesPageRefactored = lazy(() => import("./Pages/MessagesPageRefactored"));
 const BuyerDashboard = lazy(() => import("./Pages/BuyerDashboard"));
 const ArtisanDashboard = lazy(() => import("./Pages/ArtisanDashboard"));
 const ArtisanProfilePage = lazy(() => import("./Pages/ArtisanProfilePage"));
@@ -180,21 +180,21 @@ function App() {
                     }
                   />
                   <Route
-                    path="/messages"
+                    path="/messages-new"
                     element={
                       <ErrorBoundary>
                         <ProtectedRoute>
-                          <MessagesPage />
+                          <MessagesPageRefactored />
                         </ProtectedRoute>
                       </ErrorBoundary>
                     }
                   />
                   <Route
-                    path="/messages/:id"
+                    path="/messages-new/:id"
                     element={
                       <ErrorBoundary>
                         <ProtectedRoute>
-                          <MessagesPage />
+                          <MessagesPageRefactored />
                         </ProtectedRoute>
                       </ErrorBoundary>
                     }

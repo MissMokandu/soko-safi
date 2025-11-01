@@ -397,7 +397,7 @@ export const api = {
         return [];
       }
     },
-    getMessages: (userId) => apiRequest(`/messages/${userId}`),
+    getMessages: (userId) => apiRequest(`/messages/conversation/${userId}`),
     send: (receiverId, messageData) => {
       const data =
         typeof messageData === "string"
@@ -408,6 +408,19 @@ export const api = {
         method: "POST",
         body: JSON.stringify(data),
       });
+    },
+    initConversation: async (userId) => {
+      try {
+        console.log('[API] initConversation - Calling for userId:', userId)
+        const result = await apiRequest(`/messages/init/${userId}`, {
+          method: "POST",
+        });
+        console.log('[API] initConversation - Result:', result)
+        return result;
+      } catch (error) {
+        console.error('[API] initConversation - Error:', error)
+        throw new Error("Failed to initialize conversation");
+      }
     },
     sendWithAttachment: (receiverId, message, file) => {
       const formData = new FormData();

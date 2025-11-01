@@ -221,7 +221,7 @@ const ArtisanProfilePage = () => {
                     </button>
                   ) : (
                     <Link
-                      to={`/messages/${artisan.id}`}
+                      to={`/messages-new/${artisan.id}`}
                       className="btn-primary px-6 py-3 flex items-center space-x-2"
                     >
                       <MessageSquare className="w-5 h-5" />

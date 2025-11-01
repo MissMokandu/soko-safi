@@ -23,56 +23,43 @@ const MessagesTab = ({ messages, loading, authLoading }) => {
           <p className="text-gray-600 mb-8 max-w-md mx-auto">When you contact artisans or they respond to your inquiries, messages will appear here.</p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {messages.map((message) => (
-            <div key={message.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
-                    <User className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <h3 className="text-xl font-bold text-gray-900">{message.sender_name || message.artisan}</h3>
-                      {message.is_read === false && (
-                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                      )}
-                    </div>
-                    <p className="text-gray-600">{message.sender_email || 'Artisan'}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                    {message.timestamp ? new Date(message.timestamp).toLocaleDateString() : message.time}
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          {messages.map((message, index) => (
+            <Link
+              key={message.id}
+              to={`/messages-new/${message.artisan?.id || message.id}`}
+              className={`flex items-center p-4 hover:bg-gray-50 transition-colors ${
+                index !== messages.length - 1 ? 'border-b border-gray-200' : ''
+              }`}
+            >
+              <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 mr-3">
+                <img 
+                  src={message.artisan?.avatar || '/images/placeholder-avatar.jpg'} 
+                  alt={message.artisan?.name || 'Artisan'}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-base font-semibold text-gray-900 truncate">
+                    {message.sender_name || message.artisan?.name || 'Artisan'}
+                  </h3>
+                  <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                    {message.lastMessageTime || (message.timestamp ? new Date(message.timestamp).toLocaleDateString() : '')}
                   </span>
                 </div>
-              </div>
-              <p className={`p-4 rounded-xl border-l-4 ${
-                message.is_read === false
-                  ? 'text-gray-700 bg-blue-50 border-blue-500'
-                  : 'text-gray-700 bg-gray-50 border-gray-300'
-              }`}>
-                {message.message || message.lastMessage}
-              </p>
-              <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
-                <div className="flex space-x-3">
-                  <Link
-                    to={`/messages/${message.sender_id}`}
-                    className="bg-blue-50 text-blue-600 font-semibold px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors"
-                  >
-                    Reply
-                  </Link>
-                  {message.is_read === false && (
-                    <button className="bg-gray-50 text-gray-600 font-semibold px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">
-                      Mark as Read
-                    </button>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-600 truncate">
+                    {message.lastMessage || message.message || 'No messages yet'}
+                  </p>
+                  {message.unread > 0 && (
+                    <span className="bg-primary text-white text-xs rounded-full px-2 py-1 ml-2 flex-shrink-0">
+                      {message.unread}
+                    </span>
                   )}
                 </div>
-                <span className={`text-sm ${message.is_read === false ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>
-                  {message.is_read === false ? 'New message' : 'Read'}
-                </span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

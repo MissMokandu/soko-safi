@@ -22,7 +22,7 @@ const BuyerSidebar = ({ activeTab, setActiveTab }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const isCartPage = location.pathname === "/cart";
-  const isMessagesPage = location.pathname.startsWith("/messages");
+  const isMessagesPage = location.pathname.startsWith("/messages-new");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -136,7 +136,7 @@ const BuyerSidebar = ({ activeTab, setActiveTab }) => {
                 </div>
               ) : (
                 <Link
-                  to="/messages"
+                  to="/messages-new"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`w-full flex items-center ${isCollapsed ? "justify-center px-3" : "space-x-4 px-5"} py-4 rounded-xl transition-all duration-200 whitespace-nowrap group text-gray-700 hover:bg-white hover:shadow-md hover:transform hover:scale-[1.01]`}
                 >
