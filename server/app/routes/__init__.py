@@ -9,3 +9,4 @@ from .payment_routes import payment_bp
 from .favorite_routes import favorite_bp
 
 def register_blueprints(app):
+    pass
