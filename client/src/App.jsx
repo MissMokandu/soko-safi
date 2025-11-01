@@ -194,7 +194,7 @@ function App() {
                     element={
                       <ErrorBoundary>
                         <ProtectedRoute>
-                          <MessagesPageRefactored />
+                          <BuyerDashboard />
                         </ProtectedRoute>
                       </ErrorBoundary>
                     }

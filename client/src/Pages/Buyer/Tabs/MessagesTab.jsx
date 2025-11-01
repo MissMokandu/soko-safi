@@ -1,12 +1,21 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MessageSquare, User, ArrowLeft } from 'lucide-react'
 import { ListSkeleton } from '../../../Components/SkeletonLoader'
 import { useMessages } from '../../../hooks/useMessages'
 import ChatArea from '../../../Components/Messages/ChatArea'
 
-const MessagesTab = ({ messages, loading, authLoading }) => {
+const MessagesTab = ({ messages, loading, authLoading, initialArtisanId }) => {
+  console.log('[MESSAGES_TAB] Rendered with props:', { 
+    initialArtisanId, 
+    messagesCount: messages?.length, 
+    loading, 
+    authLoading 
+  })
+  
   const [selectedConversationId, setSelectedConversationId] = useState(null)
   const [messageText, setMessageText] = useState('')
+  
+  console.log('[MESSAGES_TAB] State:', { selectedConversationId, initialArtisanId })
   
   const {
     conversations,
@@ -15,14 +24,34 @@ const MessagesTab = ({ messages, loading, authLoading }) => {
     setSelectedConversation,
     sending,
     sendMessage
-  } = useMessages(selectedConversationId, true)
+  } = useMessages(initialArtisanId, !!initialArtisanId)
   
-  const currentConversation = conversations.find(c => c.id === selectedConversation)
+  // Set initial conversation when initialArtisanId is provided
+  useEffect(() => {
+    if (initialArtisanId && !selectedConversationId) {
+      setSelectedConversationId(initialArtisanId)
+    }
+  }, [initialArtisanId, selectedConversationId])
+  
+  console.log('[MESSAGES_TAB] useMessages result:', {
+    conversationsCount: conversations?.length,
+    chatMessagesCount: chatMessages?.length,
+    selectedConversation,
+    sending
+  })
+  
+  const currentConversation = conversations.find(c => c.id === (selectedConversation || initialArtisanId))
   
   const handleConversationClick = (conversationId) => {
     setSelectedConversationId(conversationId)
     setSelectedConversation(conversationId)
   }
+  
+  // Use initialArtisanId or selectedConversationId for display logic
+  const activeConversationId = selectedConversation || initialArtisanId || selectedConversationId
+  
+  console.log('[MESSAGES_TAB] Active conversation ID:', activeConversationId)
+  console.log('[MESSAGES_TAB] Current conversation:', currentConversation)
 
   const handleSendMessage = async (e) => {
     e.preventDefault()
@@ -37,7 +66,7 @@ const MessagesTab = ({ messages, loading, authLoading }) => {
   return (
     <div className="-m-4 sm:-m-6 lg:-m-8 h-[calc(100vh-4rem)] flex bg-white">
       {/* Mobile: Show only chat when conversation selected */}
-      {selectedConversationId ? (
+      {activeConversationId ? (
         <>
           {/* Mobile Chat View */}
           <div className="flex-1 flex flex-col lg:hidden">
@@ -53,6 +82,8 @@ const MessagesTab = ({ messages, loading, authLoading }) => {
               onBackClick={() => {
                 setSelectedConversationId(null)
                 setSelectedConversation(null)
+                // Navigate back to messages list
+                window.history.pushState({}, '', '/buyer-dashboard?tab=messages')
               }}
             />
           </div>
@@ -83,7 +114,7 @@ const MessagesTab = ({ messages, loading, authLoading }) => {
                         key={message.id}
                         onClick={() => handleConversationClick(message.artisan?.id || message.id)}
                         className={`w-full flex items-center p-4 hover:bg-gray-50 transition-colors text-left border-b border-gray-100 ${
-                          selectedConversationId === (message.artisan?.id || message.id) ? 'bg-blue-50 border-blue-200' : ''
+                          activeConversationId === (message.artisan?.id || message.id) ? 'bg-blue-50 border-blue-200' : ''
                         }`}
                       >
                         <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 mr-3">

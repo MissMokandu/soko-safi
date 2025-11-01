@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams, useParams } from "react-router-dom";
 
 import BuyerLayout from "./Buyer/BuyerLayout";
 import DashboardOverview from "./Buyer/DashboardOverview";
@@ -19,12 +19,29 @@ const BuyerDashboard = ({ authLoading = false }) => {
   const { user, isAuthenticated, isBuyer, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState(
-    searchParams.get("tab") || "dashboard"
-  );
+  const params = useParams();
+  const [activeTab, setActiveTab] = useState(() => {
+    // Check if we're on messages-new route
+    if (window.location.pathname.startsWith('/messages-new')) {
+      return 'messages'
+    }
+    return searchParams.get("tab") || "dashboard"
+  });
   const [selectedProductId, setSelectedProductId] = useState(
     searchParams.get("id")
   );
+  
+  // Extract artisan ID from messages-new route
+  const artisanIdFromRoute = window.location.pathname.startsWith('/messages-new/') 
+    ? window.location.pathname.split('/messages-new/')[1] 
+    : null;
+  
+  console.log('[BUYER_DASHBOARD] Route info:', {
+    pathname: window.location.pathname,
+    artisanIdFromRoute,
+    activeTab,
+    searchParams: Object.fromEntries(searchParams)
+  });
   const [reviewModal, setReviewModal] = useState({
     isOpen: false,
     product: null,
@@ -83,7 +100,12 @@ const BuyerDashboard = ({ authLoading = false }) => {
       // Check URL parameter for tab
       const tabParam = searchParams.get("tab");
       const productId = searchParams.get("id");
-      if (tabParam === "explore") {
+      
+      // Handle messages-new route
+      if (window.location.pathname.startsWith('/messages-new')) {
+        console.log('[BUYER_DASHBOARD] Setting messages tab active for messages-new route')
+        setActiveTab('messages')
+      } else if (tabParam === "explore") {
         setActiveTab("explore");
         loadExploreData();
       } else if (tabParam === "product" && productId) {
@@ -391,6 +413,7 @@ const BuyerDashboard = ({ authLoading = false }) => {
           messages={messages}
           loading={loading}
           authLoading={authLoading}
+          initialArtisanId={artisanIdFromRoute}
         />
       )}
 

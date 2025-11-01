@@ -1,14 +1,26 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { api } from '../services/api'
 import { uploadToCloudinary } from '../services/cloudinary'
 
 export const useMessages = (id, isAuthenticated) => {
+  console.log('[USE_MESSAGES] Hook called with:', { id, isAuthenticated })
+  
   const [conversations, setConversations] = useState([])
   const [messages, setMessages] = useState([])
   const [selectedConversation, setSelectedConversation] = useState(id || null)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState(null)
+  const initializationRef = useRef(new Set())
+  
+  console.log('[USE_MESSAGES] State:', { 
+    conversationsCount: conversations.length, 
+    messagesCount: messages.length, 
+    selectedConversation, 
+    loading, 
+    sending, 
+    error 
+  })
 
   const loadConversations = async () => {
     try {
@@ -16,8 +28,12 @@ export const useMessages = (id, isAuthenticated) => {
       const data = await api.messages.getConversations()
       
       setConversations(prev => {
-        if (id && prev.length > 0 && (!data || data.length === 0)) {
-          return prev
+        // If we have an ID (initializing specific conversation), preserve existing conversations
+        if (id && prev.length > 0) {
+          // Merge new conversations with existing ones, avoiding duplicates
+          const existingIds = new Set(prev.map(c => c.id))
+          const newConversations = Array.isArray(data) ? data.filter(c => !existingIds.has(c.id)) : []
+          return [...prev, ...newConversations]
         }
         return Array.isArray(data) ? data : []
       })
@@ -45,22 +61,27 @@ export const useMessages = (id, isAuthenticated) => {
 
   const initializeConversation = async (userId) => {
     try {
+      console.log('[USE_MESSAGES] Initializing conversation for userId:', userId)
       setLoading(true)
       const response = await api.messages.initConversation(userId)
       const conversation = response.conversation
       
+      console.log('[USE_MESSAGES] Conversation initialized:', conversation)
+      
       setConversations(prev => {
         const exists = prev.find(c => c.id == userId)
+        console.log('[USE_MESSAGES] Existing conversation found:', exists)
         if (exists) {
           setSelectedConversation(userId)
           return prev
         }
         const updated = [conversation, ...prev]
         setSelectedConversation(userId)
+        console.log('[USE_MESSAGES] Updated conversations:', updated)
         return updated
       })
     } catch (error) {
-      console.error('Failed to initialize conversation:', error)
+      console.error('[USE_MESSAGES] Failed to initialize conversation:', error)
       setError('Failed to start conversation')
     } finally {
       setLoading(false)
@@ -130,8 +151,10 @@ export const useMessages = (id, isAuthenticated) => {
   }
 
   useEffect(() => {
-    loadConversations()
-  }, [])
+    if (!id) {
+      loadConversations()
+    }
+  }, [id])
 
   useEffect(() => {
     if (selectedConversation) {
@@ -140,7 +163,10 @@ export const useMessages = (id, isAuthenticated) => {
   }, [selectedConversation])
 
   useEffect(() => {
-    if (id && isAuthenticated) {
+    console.log('[USE_MESSAGES] useEffect triggered:', { id, isAuthenticated })
+    if (id && isAuthenticated && !initializationRef.current.has(id)) {
+      console.log('[USE_MESSAGES] Calling initializeConversation')
+      initializationRef.current.add(id)
       initializeConversation(id)
     }
   }, [id, isAuthenticated])
