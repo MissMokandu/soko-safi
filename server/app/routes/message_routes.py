@@ -8,6 +8,7 @@ from flask import Blueprint, request
 from app.models import db, Message
 from app.auth import require_auth, require_role, require_ownership_or_role
 
+message_bp = Blueprint('message_bp', __name__)
 message_api = Api(message_bp)
 
 class MessageListResource(Resource):

@@ -8,6 +8,7 @@ from flask import Blueprint, request
 from app.models import db, Notification, NotificationType
 from app.auth import require_auth, require_role, require_ownership_or_role
 
+notification_bp = Blueprint('notification_bp', __name__)
 notification_api = Api(notification_bp)
 
 class NotificationListResource(Resource):

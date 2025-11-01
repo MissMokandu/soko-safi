@@ -9,6 +9,7 @@ from app.models import db, Payment, PaymentMethod, PaymentStatus, Order, OrderIt
 from app.auth import require_auth, require_role, require_ownership_or_role
 from app.services.mpesa_service import mpesa_service
 
+payment_bp = Blueprint('payment_bp', __name__)
 payment_api = Api(payment_bp)
 
 class PaymentListResource(Resource):

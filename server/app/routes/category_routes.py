@@ -8,6 +8,7 @@ from flask import Blueprint, request
 from app.models import db, Category, Subcategory
 from app.auth import require_auth, require_role, require_ownership_or_role
 
+category_bp = Blueprint('category_bp', __name__)
 category_api = Api(category_bp)
 
 class CategoryListResource(Resource):

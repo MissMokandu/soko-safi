@@ -8,6 +8,7 @@ from flask import Blueprint, request
 from app.models import db, Cart, CartItem
 # Removed problematic auth imports
 
+cart_bp = Blueprint('cart_bp', __name__)
 cart_api = Api(cart_bp)
 
 class CartListResource(Resource):

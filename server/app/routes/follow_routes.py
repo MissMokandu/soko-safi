@@ -8,6 +8,7 @@ from flask import Blueprint, request
 from app.models import db, Follow
 from app.auth import require_auth, require_role, require_ownership_or_role
 
+follow_bp = Blueprint('follow_bp', __name__)
 follow_api = Api(follow_bp)
 
 class FollowListResource(Resource):

@@ -10,6 +10,7 @@ from app.models import db, User, UserRole
 from app.auth import hash_password, verify_password, login_user, logout_user, get_current_user, require_auth, require_ownership_or_role
 import re
 
+auth_bp = Blueprint('auth_bp', __name__)
 auth_api = Api(auth_bp)
 
 def validate_email(email):

@@ -8,6 +8,7 @@ from flask import Blueprint, request
 from app.models import db, Favorite
 
 
+favorite_bp = Blueprint('favorite_bp', __name__)
 favorite_api = Api(favorite_bp)
 
 class FavoriteListResource(Resource):

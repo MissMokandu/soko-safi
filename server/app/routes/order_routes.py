@@ -8,6 +8,7 @@ from flask import Blueprint, request
 from app.models import db, Order, OrderItem, OrderStatus
 from app.auth import require_auth, require_role, require_ownership_or_role
 
+order_bp = Blueprint('order_bp', __name__)
 order_api = Api(order_bp)
 
 class OrderListResource(Resource):

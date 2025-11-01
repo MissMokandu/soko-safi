@@ -3,6 +3,7 @@ from flask import Blueprint, request
 from app.models import db, Collection, Product
 from app.auth import require_auth, require_role
 
+collection_bp = Blueprint('collection_bp', __name__)
 collection_api = Api(collection_bp)
 
 class CollectionListResource(Resource):

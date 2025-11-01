@@ -8,6 +8,7 @@ from flask import Blueprint, request, jsonify
 from app.models import db, ArtisanShowcaseMedia, ArtisanSocial, User, Product
 # Removed problematic auth imports
 
+artisan_bp = Blueprint('artisan_bp', __name__)
 artisan_api = Api(artisan_bp)
 
 class ArtisanShowcaseMediaListResource(Resource):
