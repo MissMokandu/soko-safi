@@ -5,8 +5,7 @@ import LoadingSpinner from "./Components/LoadingSpinner";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./hooks/useCart.jsx";
-import { quickHealthCheck } from "./utils/apiTest";
-import { showDebugPanel } from "./utils/debugPanel";
+
 
 // Lazy load components for better performance
 const Navbar = lazy(() => import("./Components/Layout/Navbar"));
@@ -69,15 +68,7 @@ const ErrorFallback = ({ error, retry }) => (
 );
 
 function App() {
-  // Development health check
-  useEffect(() => {
-    if (import.meta.env.VITE_APP_ENV === "development") {
-      setTimeout(() => {
-        quickHealthCheck();
-        showDebugPanel();
-      }, 2000);
-    }
-  }, []);
+
 
   return (
     <ErrorBoundary fallback={ErrorFallback}>
