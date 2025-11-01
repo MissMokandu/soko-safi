@@ -324,41 +324,40 @@ const CheckoutPage = ({ authLoading = false }) => {
                 </div>
               </div>
             )}
-          </div>
+            </div>
 
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">
-                Order Summary
-              </h3>
-              <div className="space-y-4 mb-6">
-                {cartItems.map((item) => (
-                  <div key={item.id} className="flex items-center space-x-3">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900 text-sm">{item.product?.title || item.title}</p>
-                      <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  Order Summary
+                </h3>
+                <div className="space-y-4 mb-6">
+                  {cartItems.map((item) => (
+                    <div key={item.id} className="flex items-center space-x-3">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900 text-sm">{item.product?.title || item.title}</p>
+                        <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                      </div>
+                      <p className="font-bold text-gray-900">KSH {(() => {
+                        const price = item.product?.price || item.price || 0
+                        const numPrice = typeof price === 'string' ? parseFloat(price) : price
+                        const validPrice = isNaN(numPrice) ? 0 : numPrice
+                        return (validPrice * item.quantity).toFixed(2)
+                      })()}</p>
                     </div>
-                    <p className="font-bold text-gray-900">KSH {(() => {
-                      const price = item.product?.price || item.price || 0
-                      const numPrice = typeof price === 'string' ? parseFloat(price) : price
-                      const validPrice = isNaN(numPrice) ? 0 : numPrice
-                      return (validPrice * item.quantity).toFixed(2)
-                    })()}</p>
+                  ))}
+                </div>
+                <div className="border-t border-gray-200 pt-4 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-lg font-bold text-gray-900">Total</span>
+                    <span className="text-xl font-bold text-gray-900">KSH {total.toFixed(2)}</span>
                   </div>
-                ))}
-              </div>
-              <div className="border-t border-gray-200 pt-4 space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-lg font-bold text-gray-900">Total</span>
-                  <span className="text-xl font-bold text-gray-900">KSH {total.toFixed(2)}</span>
                 </div>
               </div>
             </div>
           </div>
-            </div>
-          </div>
         )}
-        </div>
+          </div>
         </main>
       </div>
     </div>
