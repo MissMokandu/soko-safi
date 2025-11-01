@@ -6,27 +6,37 @@ Handles CRUD operations for favorites
 from flask_restful import Resource, Api
 from flask import Blueprint, request
 from app.models import db, Favorite
-from app.auth import require_auth, require_role, require_ownership_or_role
+
 
 favorite_bp = Blueprint('favorite_bp', __name__)
 favorite_api = Api(favorite_bp)
 
 class FavoriteListResource(Resource):
-    @require_auth
     def get(self):
         """Get favorites - Admin gets all, users get their own favorites"""
         from flask import session
-        from app.models import Product
+        from app.models.product import Product
 
+        # Get user_id from session or JWT
         current_user_id = session.get('user_id')
-        user_role = session.get('user_role')
+        if not current_user_id:
+            try:
+                from flask_jwt_extended import get_jwt_identity
+                current_user_id = get_jwt_identity()
+            except Exception:
+                return {'error': 'Authentication required'}, 401
+        
+        if not current_user_id:
+            return {'error': 'Authentication required'}, 401
+            
+        user_role = session.get('user_role', 'buyer')
 
         if user_role == 'admin':
             # Admin gets all favorites
-            favorites = Favorite.query.filter_by(deleted_at=None).all()
+            favorites = Favorite.query.all()
         else:
             # Regular users get their own favorites
-            favorites = Favorite.query.filter_by(user_id=current_user_id, deleted_at=None).all()
+            favorites = Favorite.query.filter_by(user_id=current_user_id).all()
 
         # Enhance favorites with product details
         enhanced_favorites = []
@@ -50,7 +60,6 @@ class FavoriteListResource(Resource):
 
         return enhanced_favorites
     
-    @require_auth
     def post(self):
         """Create new favorite - Authenticated users only"""
         from flask import session
@@ -60,16 +69,26 @@ class FavoriteListResource(Resource):
             return {'error': 'product_id is required'}, 400
         
         try:
-            # Set user_id to current user if not admin
+            # Get user_id from session or JWT
             user_id = session.get('user_id')
+            if not user_id:
+                try:
+                    from flask_jwt_extended import get_jwt_identity
+                    user_id = get_jwt_identity()
+                except Exception:
+                    return {'error': 'Authentication required'}, 401
+            
+            if not user_id:
+                return {'error': 'Authentication required'}, 401
+            
+            # Set user_id to current user if not admin
             if session.get('user_role') == 'admin' and 'user_id' in data:
                 user_id = data['user_id']
             
             # Check if favorite already exists
             existing = Favorite.query.filter_by(
                 user_id=user_id, 
-                product_id=data['product_id'],
-                deleted_at=None
+                product_id=data['product_id']
             ).first()
             
             if existing:
@@ -95,7 +114,6 @@ class FavoriteListResource(Resource):
         }, 201
 
 class FavoriteResource(Resource):
-    @require_ownership_or_role('user_id', 'admin')
     def get(self, favorite_id):
         """Get favorite details - Owner or Admin only"""
         favorite = Favorite.query.get_or_404(favorite_id)
@@ -106,7 +124,6 @@ class FavoriteResource(Resource):
             'created_at': favorite.created_at.isoformat() if favorite.created_at else None
         }
     
-    @require_ownership_or_role('user_id', 'admin')
     def put(self, favorite_id):
         """Update favorite - Owner or Admin only"""
         favorite = Favorite.query.get_or_404(favorite_id)
@@ -136,14 +153,60 @@ class FavoriteResource(Resource):
             }
         }, 200
     
-    @require_ownership_or_role('user_id', 'admin')
     def delete(self, favorite_id):
         """Delete favorite - Owner or Admin only"""
+        from flask import session
+        
+        # Get user_id from session or JWT
+        user_id = session.get('user_id')
+        if not user_id:
+            try:
+                from flask_jwt_extended import get_jwt_identity
+                user_id = get_jwt_identity()
+            except Exception:
+                return {'error': 'Authentication required'}, 401
+        
+        if not user_id:
+            return {'error': 'Authentication required'}, 401
+            
         favorite = Favorite.query.get_or_404(favorite_id)
         
+        # Check ownership
+        if favorite.user_id != user_id and session.get('user_role') != 'admin':
+            return {'error': 'Access denied'}, 403
+        
         try:
-            from datetime import datetime
-            favorite.deleted_at = datetime.utcnow()
+            db.session.delete(favorite)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            return {'error': 'Failed to delete favorite'}, 500
+        
+        return {'message': 'Favorite deleted successfully'}, 200
+
+class FavoriteByProductResource(Resource):
+    def delete(self, product_id):
+        """Delete favorite by product ID - Owner only"""
+        from flask import session
+        
+        # Get user_id from session or JWT
+        user_id = session.get('user_id')
+        if not user_id:
+            try:
+                from flask_jwt_extended import get_jwt_identity
+                user_id = get_jwt_identity()
+            except Exception:
+                return {'error': 'Authentication required'}, 401
+        
+        if not user_id:
+            return {'error': 'Authentication required'}, 401
+            
+        favorite = Favorite.query.filter_by(user_id=user_id, product_id=product_id).first()
+        if not favorite:
+            return {'error': 'Favorite not found'}, 404
+        
+        try:
+            db.session.delete(favorite)
             db.session.commit()
         except Exception as e:
             db.session.rollback()
@@ -154,3 +217,4 @@ class FavoriteResource(Resource):
 # Register routes
 favorite_api.add_resource(FavoriteListResource, '/')
 favorite_api.add_resource(FavoriteResource, '/<favorite_id>')
+favorite_api.add_resource(FavoriteByProductResource, '/<product_id>')

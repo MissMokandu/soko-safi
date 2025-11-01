@@ -102,7 +102,7 @@ const BuyerSidebar = ({ activeTab, setActiveTab }) => {
               >
                 <Heart className="w-6 h-6 flex-shrink-0 text-primary-600 group-hover:text-primary-700" />
                 {!isCollapsed && (
-                  <span className="font-semibold text-lg">Collections</span>
+                  <span className="font-semibold text-lg">Favourites</span>
                 )}
               </Link>
               <Link
@@ -193,7 +193,7 @@ const BuyerSidebar = ({ activeTab, setActiveTab }) => {
                   }`}
                 />
                 {!isCollapsed && (
-                  <span className="font-semibold text-lg">Collections</span>
+                  <span className="font-semibold text-lg">Favourites</span>
                 )}
               </button>
 

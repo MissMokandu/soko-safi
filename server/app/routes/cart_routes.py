@@ -18,7 +18,7 @@ class CartListResource(Resource):
         if session.get('user_role') != 'admin':
             return {'error': 'Admin access required'}, 403
         
-        carts = Cart.query.filter_by(deleted_at=None).all()
+        carts = Cart.query.all()
         return [{
             'id': c.id,
             'user_id': c.user_id,
@@ -94,8 +94,7 @@ class CartResource(Resource):
         """Delete cart - Owner or Admin only"""
         try:
             cart = Cart.query.get_or_404(cart_id)
-            from datetime import datetime
-            cart.deleted_at = datetime.utcnow()
+            db.session.delete(cart)
             db.session.commit()
         except Exception as e:
             db.session.rollback()
@@ -105,57 +104,145 @@ class CartResource(Resource):
 
 class CartItemListResource(Resource):
     def get(self):
-        """Get user's cart items - Public access with safe defaults"""
+        """Get user's cart items"""
         try:
             print(f"[CART_GET] Request from {request.remote_addr}")
-            print(f"[CART_GET] Headers: {dict(request.headers)}")
             
-            from flask_jwt_extended import get_jwt_identity, jwt_required
-            from flask_jwt_extended.exceptions import NoAuthorizationError
+            # Get user_id from session or JWT
+            from flask import session
+            user_id = session.get('user_id')
+            if not user_id:
+                try:
+                    from flask_jwt_extended import get_jwt_identity
+                    user_id = get_jwt_identity()
+                except Exception:
+                    user_id = None
             
-            try:
-                user_id = get_jwt_identity()
-                print(f"[CART_GET] JWT user_id: {user_id}")
-            except:
-                print(f"[CART_GET] No JWT token found")
-                user_id = None
+            print(f"[CART_GET] Resolved user_id: {user_id}")
             
-            print(f"[CART_GET] Returning empty cart for now")
-            return [], 200
+            if not user_id:
+                print(f"[CART_GET] No user_id found")
+                return [], 200
+            
+            # Get or create user's cart
+            cart = Cart.query.filter_by(user_id=user_id).first()
+            if not cart:
+                print(f"[CART_GET] No cart found for user {user_id}")
+                return [], 200
+            
+            # Get cart items with product details
+            from app.models.product import Product
+            print(f"[CART_GET] Querying cart items for cart_id: {cart.id}")
+            
+            cart_items = db.session.query(CartItem, Product).join(
+                Product, CartItem.product_id == Product.id
+            ).filter(
+                CartItem.cart_id == cart.id
+            ).all()
+            
+            print(f"[CART_GET] Raw query result: {len(cart_items)} items")
+            
+            result = []
+            for cart_item, product in cart_items:
+                item_data = {
+                    'id': cart_item.id,
+                    'product_id': cart_item.product_id,
+                    'quantity': cart_item.quantity,
+                    'unit_price': float(cart_item.unit_price) if cart_item.unit_price else float(product.price),
+                    'added_at': cart_item.added_at.isoformat() if cart_item.added_at else None,
+                    'product': {
+                        'id': product.id,
+                        'title': product.title,
+                        'price': float(product.price),
+                        'image': product.image_url,
+                        'image_url': product.image_url,
+                        'artisan_name': 'Artisan',  # TODO: Join with user table
+                        'stock': product.stock
+                    }
+                }
+                print(f"[CART_GET] Processing item: {item_data['product']['title']} x{item_data['quantity']}")
+                result.append(item_data)
+            
+            print(f"[CART_GET] Returning {len(result)} cart items for user {user_id}")
+            print(f"[CART_GET] Final result: {result}")
+            return result, 200
+            
         except Exception as e:
             print(f"[CART_GET] Error: {e}")
+            import traceback
+            traceback.print_exc()
             return [], 200
     
     def post(self):
-        """Add item to cart - Public access with authentication check"""
+        """Add item to cart"""
         try:
             print(f"[CART_ADD] Request from {request.remote_addr}")
-            print(f"[CART_ADD] Headers: {dict(request.headers)}")
             
-            from flask_jwt_extended import get_jwt_identity
-            
-            try:
-                user_id = get_jwt_identity()
-                print(f"[CART_ADD] JWT user_id: {user_id}")
-            except:
-                print(f"[CART_ADD] No JWT token found")
+            # Get user_id from session or JWT
+            from flask import session
+            user_id = session.get('user_id')
+            if not user_id:
+                try:
+                    from flask_jwt_extended import get_jwt_identity
+                    user_id = get_jwt_identity()
+                except Exception:
+                    user_id = None
+
+            print(f"[CART_ADD] Resolved user_id: {user_id}")
+            if not user_id:
                 return {'error': 'Authentication required'}, 401
             
             data = request.json or {}
             print(f"[CART_ADD] Request data: {data}")
             
-            if not data.get('product_id'):
-                print(f"[CART_ADD] Missing product_id")
+            product_id = data.get('product_id')
+            quantity = data.get('quantity', 1)
+            
+            if not product_id:
                 return {'error': 'product_id is required'}, 400
             
-            print(f"[CART_ADD] User {user_id} adding product {data.get('product_id')} quantity {data.get('quantity', 1)}")
+            # Verify product exists
+            from app.models.product import Product
+            product = Product.query.get(product_id)
+            if not product:
+                return {'error': 'Product not found'}, 404
+            
+            # Get or create user's cart
+            cart = Cart.query.filter_by(user_id=user_id).first()
+            if not cart:
+                cart = Cart(user_id=user_id)
+                db.session.add(cart)
+                db.session.flush()  # Get cart.id
+            
+            # Check if item already exists in cart
+            existing_item = CartItem.query.filter_by(
+                cart_id=cart.id,
+                product_id=product_id
+            ).first()
+            
+            if existing_item:
+                # Update quantity
+                existing_item.quantity += quantity
+                cart_item = existing_item
+            else:
+                # Create new cart item
+                cart_item = CartItem(
+                    cart_id=cart.id,
+                    product_id=product_id,
+                    quantity=quantity,
+                    unit_price=product.price
+                )
+                db.session.add(cart_item)
+            
+            db.session.commit()
             
             result = {
                 'message': 'Item added to cart successfully',
                 'cart_item': {
-                    'id': 1,
-                    'product_id': data.get('product_id'),
-                    'quantity': data.get('quantity', 1)
+                    'id': cart_item.id,
+                    'product_id': cart_item.product_id,
+                    'quantity': cart_item.quantity,
+                    'unit_price': float(cart_item.unit_price)
                 }
             }
             
@@ -164,60 +251,118 @@ class CartItemListResource(Resource):
             
         except Exception as e:
             print(f"[CART_ADD] Error: {e}")
+            import traceback
+            traceback.print_exc()
+            db.session.rollback()
             return {'error': 'Failed to add item to cart'}, 500
 
 class CartItemResource(Resource):
     def get(self, cart_item_id):
-        """Get cart item details - Public access with safe defaults"""
+        """Get cart item details"""
         try:
+            cart_item = CartItem.query.get_or_404(cart_item_id)
             return {
-                'id': cart_item_id,
-                'product_id': 1,
-                'quantity': 1,
-                'unit_price': 0
+                'id': cart_item.id,
+                'product_id': cart_item.product_id,
+                'quantity': cart_item.quantity,
+                'unit_price': float(cart_item.unit_price) if cart_item.unit_price else 0
             }
         except Exception as e:
             return {'error': 'Cart item not found'}, 404
     
     def put(self, cart_item_id):
-        """Update cart item - Public access with authentication check"""
+        """Update cart item quantity"""
         try:
+            # Get user_id from session or JWT
             from flask import session
-            if not session.get('user_id'):
-                return {'error': 'Authentication required'}, 401
+            user_id = session.get('user_id')
+            if not user_id:
+                try:
+                    from flask_jwt_extended import get_jwt_identity
+                    user_id = get_jwt_identity()
+                except Exception:
+                    return {'error': 'Authentication required'}, 401
+            
+            cart_item = CartItem.query.get_or_404(cart_item_id)
+            
+            # Verify ownership
+            cart = Cart.query.get(cart_item.cart_id)
+            if cart.user_id != user_id:
+                return {'error': 'Access denied'}, 403
             
             data = request.json or {}
+            quantity = data.get('quantity', 1)
+            
+            if quantity <= 0:
+                return {'error': 'Quantity must be greater than 0'}, 400
+            
+            cart_item.quantity = quantity
+            db.session.commit()
+            
             return {
                 'message': 'Cart item updated successfully',
                 'cart_item': {
-                    'id': cart_item_id,
-                    'quantity': data.get('quantity', 1)
+                    'id': cart_item.id,
+                    'quantity': cart_item.quantity,
+                    'unit_price': float(cart_item.unit_price) if cart_item.unit_price else 0
                 }
             }, 200
         except Exception as e:
+            db.session.rollback()
             return {'error': 'Failed to update cart item'}, 500
     
     def delete(self, cart_item_id):
-        """Delete cart item - Public access with authentication check"""
+        """Delete cart item"""
         try:
+            # Get user_id from session or JWT
             from flask import session
-            if not session.get('user_id'):
-                return {'error': 'Authentication required'}, 401
+            user_id = session.get('user_id')
+            if not user_id:
+                try:
+                    from flask_jwt_extended import get_jwt_identity
+                    user_id = get_jwt_identity()
+                except Exception:
+                    return {'error': 'Authentication required'}, 401
+            
+            cart_item = CartItem.query.get_or_404(cart_item_id)
+            
+            # Verify ownership
+            cart = Cart.query.get(cart_item.cart_id)
+            if cart.user_id != user_id:
+                return {'error': 'Access denied'}, 403
+            
+            db.session.delete(cart_item)
+            db.session.commit()
             
             return {'message': 'Cart item deleted successfully'}, 200
         except Exception as e:
+            db.session.rollback()
             return {'error': 'Failed to delete cart item'}, 500
 
 class ClearCartResource(Resource):
     def delete(self):
-        """Clear user's cart - Public access with authentication check"""
+        """Clear user's cart"""
         try:
+            # Get user_id from session or JWT
             from flask import session
-            if not session.get('user_id'):
-                return {'error': 'Authentication required'}, 401
+            user_id = session.get('user_id')
+            if not user_id:
+                try:
+                    from flask_jwt_extended import get_jwt_identity
+                    user_id = get_jwt_identity()
+                except Exception:
+                    return {'error': 'Authentication required'}, 401
+            
+            # Get user's cart
+            cart = Cart.query.filter_by(user_id=user_id, deleted_at=None).first()
+            if cart:
+                # Delete all cart items
+                CartItem.query.filter_by(cart_id=cart.id).delete()
+                db.session.commit()
             
             return {'message': 'Cart cleared successfully'}, 200
         except Exception as e:
+            db.session.rollback()
             return {'error': 'Failed to clear cart'}, 500
 
 # Register routes

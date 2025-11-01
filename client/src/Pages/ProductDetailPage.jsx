@@ -122,7 +122,11 @@ const ProductDetailPage = () => {
         throw new Error('Product ID not found')
       }
       
+      console.log(`[FRONTEND_ADD_CART] User adding to cart: ${product.title} x${quantity}`);
+      console.log(`[FRONTEND_ADD_CART] Product ID: ${productId}, Total: ${product.price * quantity}`);
+      
       await api.cart.add(productId, quantity)
+      console.log(`[FRONTEND_ADD_CART] Successfully added to cart`);
       alert(`Added ${quantity} ${product.title} to cart!`)
       navigate('/cart')
     } catch (error) {
@@ -152,7 +156,11 @@ const ProductDetailPage = () => {
         throw new Error('Product ID not found')
       }
       
+      console.log(`[FRONTEND_BUY_NOW] User buying now: ${product.title} x${quantity}`);
+      console.log(`[FRONTEND_BUY_NOW] Product ID: ${productId}, Total: ${product.price * quantity}`);
+      
       await api.cart.add(productId, quantity)
+      console.log(`[FRONTEND_BUY_NOW] Successfully added to cart, navigating to checkout`);
       navigate('/checkout')
       
     } catch (error) {
@@ -442,12 +450,14 @@ const ProductDetailPage = () => {
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         <span>Processing...</span>
                       </>
-                    ) : (
+                    ) : isAuthenticated ? (
                       <>
                         <span>Buy Now</span>
                         <span className="text-lg">•</span>
                         <span>KSh {(product.price * quantity).toLocaleString()}</span>
                       </>
+                    ) : (
+                      <span>Login to Buy Product</span>
                     )}
                   </button>
                   <button
@@ -460,11 +470,13 @@ const ProductDetailPage = () => {
                         <div className="w-5 h-5 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
                         <span>Adding...</span>
                       </>
-                    ) : (
+                    ) : isAuthenticated ? (
                       <>
                         <ShoppingCart className="w-5 h-5" />
                         <span>Add to Cart</span>
                       </>
+                    ) : (
+                      <span>Login to Add to Cart</span>
                     )}
                   </button>
                 </div>

@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Star, Package, CreditCard, Plus, Search, Filter, Grid, List, MapPin, ShoppingBag, MessageSquare, Heart } from 'lucide-react'
+import { Star, Package, CreditCard, Plus, Search, Filter, Grid, List, MapPin, ShoppingBag, MessageSquare, Heart, ArrowLeft, User } from 'lucide-react'
+import { CardSkeleton, ListSkeleton, StatsSkeleton } from '../Components/SkeletonLoader'
 import ReviewModal from '../Components/ReviewModal'
 import LazyImage from '../Components/LazyImage'
 import DashboardNavbar from '../Components/Layout/DashboardNavbar'
 import BuyerSidebar from '../Components/Layout/BuyerSidebar'
 import { api } from '../services/api'
+import { logError, handleAuthError } from '../utils/errorHandler'
 import { useAuth } from '../context/AuthContext'
 
-const BuyerDashboard = () => {
+const BuyerDashboard = ({ authLoading = false }) => {
   const { user, isAuthenticated, isBuyer, logout } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dashboard')
+  const [selectedProductId, setSelectedProductId] = useState(searchParams.get('id'))
   const [reviewModal, setReviewModal] = useState({ isOpen: false, product: null })
 
   // State for API data
@@ -38,24 +41,34 @@ const BuyerDashboard = () => {
   // Loading and error states
   const [loading, setLoading] = useState(false)
   const [dashboardLoading, setDashboardLoading] = useState(true)
+  const [exploreLoading, setExploreLoading] = useState(false)
+  const [productLoading, setProductLoading] = useState(false)
   const [error, setError] = useState(null)
+  
+  // Product detail state
+  const [selectedProduct, setSelectedProduct] = useState(null)
 
   // Load dashboard data on component mount
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (!authLoading && isAuthenticated && user) {
       console.log('Loading buyer dashboard for user:', user)
       loadDashboardData()
       
       // Check URL parameter for tab
       const tabParam = searchParams.get('tab')
+      const productId = searchParams.get('id')
       if (tabParam === 'explore') {
         setActiveTab('explore')
         loadExploreData()
+      } else if (tabParam === 'product' && productId) {
+        setActiveTab('product')
+        setSelectedProductId(productId)
+        loadProductDetails(productId)
       }
-    } else {
+    } else if (!authLoading) {
       console.log('User not authenticated, skipping dashboard load')
     }
-  }, [isAuthenticated, user, searchParams])
+  }, [authLoading, isAuthenticated, user, searchParams])
 
   const loadDashboardData = async () => {
     try {
@@ -100,7 +113,7 @@ const BuyerDashboard = () => {
       }
 
     } catch (error) {
-      console.error('Failed to load dashboard data:', error)
+      handleAuthError(error, 'loadDashboardData')
       // Set empty state instead of error for new users
       setOrders([])
       setMessages([])
@@ -124,7 +137,7 @@ const BuyerDashboard = () => {
       const ordersData = await api.orders.getAll()
       setOrders(ordersData || [])
     } catch (error) {
-      console.error('Failed to load orders:', error)
+      handleAuthError(error, 'loadOrders')
       setError('Failed to load orders. Please try again.')
     } finally {
       setLoading(false)
@@ -137,7 +150,7 @@ const BuyerDashboard = () => {
       const messagesData = await api.messages.getConversations()
       setMessages(messagesData || [])
     } catch (error) {
-      console.error('Failed to load messages:', error)
+      handleAuthError(error, 'loadMessages')
       setError('Failed to load messages. Please try again.')
     } finally {
       setLoading(false)
@@ -150,7 +163,7 @@ const BuyerDashboard = () => {
       const collectionsData = await api.favorites.getAll()
       setCollections(collectionsData || [])
     } catch (error) {
-      console.error('Failed to load collections:', error)
+      handleAuthError(error, 'loadCollections')
       setError('Failed to load collections. Please try again.')
     } finally {
       setLoading(false)
@@ -172,13 +185,14 @@ const BuyerDashboard = () => {
 
   const loadExploreData = async () => {
     try {
-      setLoading(true)
+      setExploreLoading(true)
       const [productsResponse, categoriesResponse] = await Promise.all([
         api.products.getAll(),
         api.categories.getAll(),
       ])
 
       const productsArray = Array.isArray(productsResponse) ? productsResponse : []
+      console.log(`[FRONTEND_PRODUCTS] Loaded ${productsArray.length} products in explore page`);
       setExploreProducts(productsArray)
 
       const categoryMap = new Map()
@@ -198,10 +212,23 @@ const BuyerDashboard = () => {
       
       setExploreCategories(categoriesWithCounts)
     } catch (error) {
-      console.error('Failed to load explore data:', error)
+      handleAuthError(error, 'loadExploreData')
       setError('Failed to load products. Please try again.')
     } finally {
-      setLoading(false)
+      setExploreLoading(false)
+    }
+  }
+
+  const loadProductDetails = async (productId) => {
+    try {
+      setProductLoading(true)
+      const product = await api.products.getById(productId)
+      setSelectedProduct(product)
+    } catch (error) {
+      handleAuthError(error, 'loadProductDetails')
+      setError('Failed to load product details. Please try again.')
+    } finally {
+      setProductLoading(false)
     }
   }
 
@@ -244,37 +271,16 @@ const BuyerDashboard = () => {
     return formatted || '/images/placeholder.jpg'
   }
 
-  // Show loading while checking authentication
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Authentication Required</h2>
-          <p className="text-gray-600 mb-6">Please log in as a buyer to access your dashboard.</p>
-          <Link to="/login" className="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors">
-            Go to Login
-          </Link>
-        </div>
-      </div>
-    )
+  // Show role mismatch if user is not a buyer (only when not loading)
+  if (!authLoading && user && !isBuyer) {
+    window.location.href = '/artisan-dashboard'
+    return null
   }
 
-  // Show role mismatch if user is not a buyer
-  if (user && !isBuyer) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
-          <p className="text-gray-600 mb-6">This dashboard is only available for buyer accounts.</p>
-          <Link to="/artisan-dashboard" className="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors mr-4">
-            Go to Artisan Dashboard
-          </Link>
-          <Link to="/" className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors">
-            Go Home
-          </Link>
-        </div>
-      </div>
-    )
+  if (!authLoading && !isAuthenticated) {
+    const { redirectToLogin } = require('../utils/auth')
+    redirectToLogin()
+    return null
   }
 
   const handleSidebarClick = (tab) => {
@@ -305,20 +311,9 @@ const BuyerDashboard = () => {
                   <p className="text-gray-600">Welcome back! Here's your shopping activity at a glance.</p>
                 </div>
 
-                {dashboardLoading ? (
+                {(dashboardLoading || authLoading) ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-12">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="bg-gray-100 p-8 rounded-2xl border border-gray-200 animate-pulse">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="w-12 h-12 bg-gray-300 rounded-xl"></div>
-                          <div className="text-right">
-                            <div className="w-16 h-6 bg-gray-300 rounded mb-2"></div>
-                            <div className="w-12 h-8 bg-gray-300 rounded"></div>
-                          </div>
-                        </div>
-                        <div className="w-20 h-4 bg-gray-300 rounded"></div>
-                      </div>
-                    ))}
+                    <StatsSkeleton />
                   </div>
                 ) : error ? (
                   <div className="bg-red-50 border border-red-200 rounded-2xl p-8 mb-12">
@@ -415,29 +410,9 @@ const BuyerDashboard = () => {
                   <p className="text-gray-600">Track your purchases and manage your order history.</p>
                 </div>
 
-                {loading ? (
+                {(loading || authLoading) ? (
                   <div className="space-y-6">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 animate-pulse">
-                        <div className="flex items-start justify-between mb-6">
-                          <div className="w-20 h-20 bg-gray-200 rounded-xl"></div>
-                          <div className="flex-1 ml-6">
-                            <div className="w-48 h-6 bg-gray-200 rounded mb-2"></div>
-                            <div className="w-32 h-4 bg-gray-200 rounded mb-1"></div>
-                            <div className="w-40 h-4 bg-gray-200 rounded"></div>
-                          </div>
-                          <div className="text-right">
-                            <div className="w-24 h-8 bg-gray-200 rounded mb-2"></div>
-                            <div className="w-20 h-6 bg-gray-200 rounded"></div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-3 pt-4 border-t border-gray-100">
-                          <div className="w-24 h-8 bg-gray-200 rounded"></div>
-                          <div className="w-28 h-8 bg-gray-200 rounded"></div>
-                          <div className="w-32 h-8 bg-gray-200 rounded"></div>
-                        </div>
-                      </div>
-                    ))}
+                    <ListSkeleton />
                   </div>
                 ) : orders.length === 0 ? (
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-16 text-center rounded-2xl border-2 border-dashed border-gray-300">
@@ -523,23 +498,9 @@ const BuyerDashboard = () => {
                   <p className="text-gray-600">Communicate with artisans about your orders and inquiries.</p>
                 </div>
 
-                {loading ? (
+                {(loading || authLoading) ? (
                   <div className="space-y-6">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 animate-pulse">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
-                          <div className="flex-1 ml-4">
-                            <div className="w-32 h-6 bg-gray-200 rounded mb-2"></div>
-                            <div className="w-48 h-4 bg-gray-200 rounded"></div>
-                          </div>
-                          <div className="text-right">
-                            <div className="w-16 h-4 bg-gray-200 rounded"></div>
-                          </div>
-                        </div>
-                        <div className="w-full h-12 bg-gray-200 rounded-xl"></div>
-                      </div>
-                    ))}
+                    <ListSkeleton />
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-16 text-center rounded-2xl border-2 border-dashed border-gray-300">
@@ -614,17 +575,9 @@ const BuyerDashboard = () => {
                   <p className="text-gray-600">Your saved favorite handcrafted items from talented artisans.</p>
                 </div>
 
-                {loading ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden animate-pulse">
-                        <div className="aspect-square bg-gray-200"></div>
-                        <div className="p-6">
-                          <div className="w-32 h-6 bg-gray-200 rounded mb-2"></div>
-                          <div className="w-20 h-4 bg-gray-200 rounded"></div>
-                        </div>
-                      </div>
-                    ))}
+                {(loading || authLoading) ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {[1, 2, 3, 4].map((i) => <CardSkeleton key={i} />)}
                   </div>
                 ) : collections.length === 0 ? (
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-16 text-center rounded-2xl border-2 border-dashed border-gray-300">
@@ -645,7 +598,7 @@ const BuyerDashboard = () => {
                     {collections.map((favorite) => (
                       <Link
                         key={favorite.id}
-                        to={`/product/${favorite.product_id || favorite.id}`}
+                        to={`/buyer-dashboard?tab=product&id=${favorite.product_id || favorite.id}`}
                         className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
                       >
                         <div className="aspect-square overflow-hidden relative">
@@ -790,7 +743,7 @@ const BuyerDashboard = () => {
                       {sortedProducts.map((product) => (
                         <Link
                           key={product.id}
-                          to={`/product/${product.id}`}
+                          to={`/buyer-dashboard?tab=product&id=${product.id}`}
                           className={`group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden ${
                             viewMode === "list" ? "flex" : ""
                           }`}
@@ -842,15 +795,93 @@ const BuyerDashboard = () => {
                   )
                 })()} 
 
-                {loading && (
-                  <div className="flex justify-center py-16">
-                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+                {(exploreLoading || authLoading) && (
+                  <div className={`${
+                    viewMode === "grid"
+                      ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                      : "space-y-4"
+                  }`}>
+                    {[1, 2, 3, 4, 5, 6].map((i) => <CardSkeleton key={i} />)}
                   </div>
                 )}
-                {!loading && exploreProducts.length === 0 && (
+                {!exploreLoading && exploreProducts.length === 0 && (
                   <div className="text-center py-16 text-gray-600">
                     <Search className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                     <p>No products found. Try adjusting your filters.</p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Product Detail Tab */}
+            {activeTab === 'product' && (
+              <>
+                <div className="mb-8">
+                  <button
+                    onClick={() => {
+                      setActiveTab('explore')
+                      loadExploreData()
+                    }}
+                    className="text-primary-600 hover:text-primary-700 font-medium mb-4 flex items-center space-x-2"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Back to Explore</span>
+                  </button>
+                </div>
+
+                {(productLoading || authLoading) ? (
+                  <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-8">
+                      <div className="aspect-square bg-gray-200 rounded-xl animate-pulse"></div>
+                      <div className="space-y-6">
+                        <div className="w-3/4 h-8 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="w-1/2 h-6 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="w-1/3 h-10 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="space-y-2">
+                          <div className="w-full h-4 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="w-5/6 h-4 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="w-4/5 h-4 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                        <div className="flex space-x-4">
+                          <div className="flex-1 h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                          <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : selectedProduct ? (
+                  <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-8">
+                      <div className="aspect-square overflow-hidden rounded-xl">
+                        <LazyImage
+                          src={selectedProduct.image_url || selectedProduct.image}
+                          alt={selectedProduct.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="space-y-6">
+                        <div>
+                          <h1 className="text-3xl font-bold text-gray-900 mb-2">{selectedProduct.title}</h1>
+                          <p className="text-gray-600">by {selectedProduct.artisan_name || 'Unknown Artisan'}</p>
+                        </div>
+                        <div className="text-4xl font-bold text-primary-600">
+                          KSh {selectedProduct.price?.toLocaleString()}
+                        </div>
+                        <p className="text-gray-700 leading-relaxed">{selectedProduct.description}</p>
+                        <div className="flex space-x-4">
+                          <button className="flex-1 bg-primary-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-primary-700 transition-colors">
+                            Add to Cart
+                          </button>
+                          <button className="p-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
+                            <Heart className="w-6 h-6 text-gray-600" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-16">
+                    <p className="text-gray-600">Product not found</p>
                   </div>
                 )}
               </>
@@ -864,24 +895,9 @@ const BuyerDashboard = () => {
                   <p className="text-gray-600">View all your payment transactions and receipts.</p>
                 </div>
 
-                {loading ? (
-                  <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden animate-pulse">
-                    <div className="p-6 border-b border-gray-200">
-                      <div className="grid grid-cols-5 gap-4">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                          <div key={i} className="w-full h-6 bg-gray-200 rounded"></div>
-                        ))}
-                      </div>
-                    </div>
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="p-6 border-b border-gray-100 last:border-0">
-                        <div className="grid grid-cols-5 gap-4">
-                          {[1, 2, 3, 4, 5].map((j) => (
-                            <div key={j} className="w-full h-4 bg-gray-200 rounded"></div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                {(loading || authLoading) ? (
+                  <div className="space-y-6">
+                    <ListSkeleton />
                   </div>
                 ) : payments.length === 0 ? (
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-16 text-center rounded-2xl border-2 border-dashed border-gray-300">

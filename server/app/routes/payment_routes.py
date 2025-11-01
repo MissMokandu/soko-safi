@@ -24,11 +24,11 @@ class PaymentListResource(Resource):
 
         if user_role == 'admin':
             # Admin gets all payments
-            payments = Payment.query.filter_by(deleted_at=None).all()
+            payments = Payment.query.all()
         else:
             # Regular users get payments for their orders
             user_order_ids = [o.id for o in Order.query.filter_by(user_id=current_user_id).all()]
-            payments = Payment.query.filter(Payment.order_id.in_(user_order_ids), Payment.deleted_at.is_(None)).all()
+            payments = Payment.query.filter(Payment.order_id.in_(user_order_ids)).all()
 
         # Enhance payments with order details
         enhanced_payments = []

@@ -6,6 +6,7 @@ import Footer from '../Components/Layout/Footer'
 import LazyImage from '../Components/LazyImage'
 import LoadingSpinner from '../Components/LoadingSpinner'
 import { api } from '../services/api'
+import { getProductLink } from '../utils/navigation'
 
 const ExplorePage = () => {
   const [viewMode, setViewMode] = useState('grid')
@@ -209,7 +210,7 @@ const ExplorePage = () => {
             {sortedWorks.map((work) => (
               <Link
                 key={work.id}
-                to={`/product/${work.id}`}
+                to={getProductLink(work.id)}
                 className={`group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden ${
                   viewMode === "list" ? "flex" : ""
                 }`}

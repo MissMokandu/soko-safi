@@ -5,8 +5,9 @@ import { api } from '../services/api'
 import { uploadToCloudinary } from '../services/cloudinary'
 import { useAuth } from '../context/AuthContext'
 import ArtisanSidebar from '../Components/Layout/ArtisanSidebar'
+import { logError, handleAuthError } from '../utils/errorHandler'
 
-const ArtisanDashboard = () => {
+const ArtisanDashboard = ({ authLoading = false }) => {
   const { user, isAuthenticated, isArtisan } = useAuth()
   const [activeTab, setActiveTab] = useState('dashboard')
   const [showProfileSettings, setShowProfileSettings] = useState(false)
@@ -45,15 +46,15 @@ const ArtisanDashboard = () => {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (!authLoading && isAuthenticated && user) {
       console.log('Loading artisan dashboard for user:', user)
       loadDashboardData()
       loadProducts()
       loadProfileData()
-    } else {
+    } else if (!authLoading) {
       console.log('User not authenticated, skipping dashboard load')
     }
-  }, [isAuthenticated, user])
+  }, [authLoading, isAuthenticated, user])
 
   const loadDashboardData = async () => {
     try {
@@ -74,7 +75,7 @@ const ArtisanDashboard = () => {
         setDashboardStats({ total_products: 0, total_orders: 0, total_revenue: 0 })
       }
     } catch (error) {
-      console.error('Failed to load dashboard data:', error)
+      handleAuthError(error, 'loadDashboardData')
       setDashboardStats({ total_products: 0, total_orders: 0, total_revenue: 0 })
       if (error.message.includes('Authentication')) {
         setError('Please log in to view your dashboard.')
@@ -90,7 +91,7 @@ const ArtisanDashboard = () => {
       const products = await api.artisan.getProducts(user?.id)
       setMyProducts(Array.isArray(products) ? products : [])
     } catch (error) {
-      console.error('Failed to load products:', error)
+      handleAuthError(error, 'loadProducts')
       setMyProducts([])
     } finally {
       setLoading(false)
@@ -103,7 +104,7 @@ const ArtisanDashboard = () => {
       const orders = await api.artisan.getOrders()
       setArtisanOrders(orders)
     } catch (error) {
-      console.error('Failed to load orders:', error)
+      handleAuthError(error, 'loadOrders')
       setError('Failed to load orders. Please try again.')
     } finally {
       setLoading(false)
@@ -116,7 +117,7 @@ const ArtisanDashboard = () => {
       const messages = await api.artisan.getMessages()
       setArtisanMessages(messages)
     } catch (error) {
-      console.error('Failed to load messages:', error)
+      handleAuthError(error, 'loadMessages')
       setError('Failed to load messages. Please try again.')
     } finally {
       setLoading(false)
@@ -323,37 +324,16 @@ const ArtisanDashboard = () => {
     }
   }
 
-  // Show loading while checking authentication
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Authentication Required</h2>
-          <p className="text-gray-600 mb-6">Please log in as an artisan to access your dashboard.</p>
-          <Link to="/login" className="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors">
-            Go to Login
-          </Link>
-        </div>
-      </div>
-    )
+  // Show role mismatch if user is not an artisan (only when not loading)
+  if (!authLoading && user && !isArtisan) {
+    window.location.href = '/buyer-dashboard'
+    return null
   }
 
-  // Show role mismatch if user is not an artisan
-  if (user && !isArtisan) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
-          <p className="text-gray-600 mb-6">This dashboard is only available for artisan accounts.</p>
-          <Link to="/buyer-dashboard" className="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors mr-4">
-            Go to Buyer Dashboard
-          </Link>
-          <Link to="/" className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors">
-            Go Home
-          </Link>
-        </div>
-      </div>
-    )
+  if (!authLoading && !isAuthenticated) {
+    const { redirectToLogin } = require('../utils/auth')
+    redirectToLogin()
+    return null
   }
 
   return (
@@ -421,7 +401,7 @@ const ArtisanDashboard = () => {
                   <h1 className="text-4xl font-bold text-gray-900 mb-2">Dashboard Overview</h1>
                   <p className="text-gray-600">Welcome back! Here's what's happening with your artisan business.</p>
                 </div>
-                {dashboardLoading ? (
+                {(dashboardLoading || authLoading) ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
                     {[1, 2, 3].map((i) => (
                       <div key={i} className="bg-gray-100 p-8 rounded-2xl border border-gray-200 animate-pulse">
@@ -813,7 +793,7 @@ const ArtisanDashboard = () => {
                   <h1 className="text-4xl font-bold text-gray-900 mb-2">Orders</h1>
                   <p className="text-gray-600">Manage your customer orders and track their progress.</p>
                 </div>
-                {loading ? (
+                {(loading || authLoading) ? (
                   <div className="space-y-6">
                     {[1, 2, 3].map((i) => (
                       <div key={i} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 animate-pulse">
@@ -925,7 +905,7 @@ const ArtisanDashboard = () => {
                   <h1 className="text-4xl font-bold text-gray-900 mb-2">Messages</h1>
                   <p className="text-gray-600">Communicate with your customers and respond to inquiries.</p>
                 </div>
-                {loading ? (
+                {(loading || authLoading) ? (
                   <div className="space-y-6">
                     {[1, 2, 3].map((i) => (
                       <div key={i} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 animate-pulse">

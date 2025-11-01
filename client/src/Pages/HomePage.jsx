@@ -5,6 +5,7 @@ import Footer from '../Components/Layout/Footer'
 import LazyImage from '../Components/LazyImage'
 import LoadingSpinner from '../Components/LoadingSpinner'
 import { api } from '../services/api'
+import { getProductLink, getExploreLink } from '../utils/navigation'
 import { Star, Users, Award, TrendingUp, ArrowRight, Sparkles } from 'lucide-react'
 
 const HomePage = () => {
@@ -162,7 +163,7 @@ const HomePage = () => {
               <ArrowRight className="inline w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
-              to="/explore"
+              to={getExploreLink()}
               className="group bg-transparent border-2 border-white text-white font-semibold rounded-xl px-8 py-4 hover:bg-white hover:text-primary-700 transition-all duration-300 transform hover:scale-105"
             >
               Explore Marketplace
@@ -237,7 +238,7 @@ const HomePage = () => {
               {featuredWorks.map((work) => (
                 <Link
                   key={work.id}
-                  to={`/product/${work.id}`}
+                  to={getProductLink(work.id)}
                   className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden"
                 >
                   <div className="aspect-square overflow-hidden">
@@ -280,7 +281,7 @@ const HomePage = () => {
 
           <div className="text-center mt-12">
             <Link
-              to="/explore"
+              to={getExploreLink()}
               className="inline-flex items-center gap-2 bg-primary-600 text-white font-semibold rounded-xl px-8 py-4 hover:bg-primary-700 transition-colors"
             >
               View All Products
@@ -348,7 +349,7 @@ const HomePage = () => {
               Become an Artisan
             </Link>
             <Link
-              to="/explore"
+              to={getExploreLink()}
               className="border-2 border-white text-white font-semibold rounded-xl px-8 py-4 hover:bg-white hover:text-primary-700 transition-all"
             >
               Shop Now

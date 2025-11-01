@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Smartphone, Lock, CheckCircle, Loader } from 'lucide-react'
-import Navbar from '../Components/Layout/Navbar'
-import Footer from '../Components/Layout/Footer'
+import DashboardNavbar from '../Components/Layout/DashboardNavbar'
+import BuyerSidebar from '../Components/Layout/BuyerSidebar'
 import { useCart } from '../hooks/useCart.jsx'
 import { api } from '../services/api'
 
-const CheckoutPage = () => {
+const CheckoutPage = ({ authLoading = false }) => {
   const navigate = useNavigate()
   const { cartItems, loading, clearCart } = useCart()
   const [step, setStep] = useState(1) // 1: Shipping, 2: Payment, 3: Confirmation
@@ -24,10 +24,10 @@ const CheckoutPage = () => {
   })
 
   useEffect(() => {
-    if (!loading && (!cartItems || cartItems.length === 0)) {
+    if (!loading && !authLoading && (!cartItems || cartItems.length === 0)) {
       navigate('/cart')
     }
-  }, [cartItems, loading, navigate])
+  }, [cartItems, loading, authLoading, navigate])
 
   const subtotal = cartItems.reduce((sum, item) => {
     const price = item.product?.price || item.price || 0
@@ -36,7 +36,7 @@ const CheckoutPage = () => {
     return sum + (validPrice * item.quantity)
   }, 0)
   const shipping = 150.00 // KSH 150 shipping
-  const tax = subtotal * 0.16 // 16% VAT in Kenya
+  const tax = subtotal * 0.016 // 1.6% VAT in Kenya
   const total = subtotal + shipping + tax
 
   const handlePaymentChange = (e) => {
@@ -129,13 +129,71 @@ const CheckoutPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <DashboardNavbar />
+      <div className="flex flex-col lg:flex-row">
+        <BuyerSidebar />
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 animate-fade-in">
+          <div className="max-w-7xl mx-auto">
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          <div className="lg:col-span-2">
-            {step === 1 && (
+        {(loading || authLoading) ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-xl shadow-sm p-8 animate-pulse">
+                <div className="w-48 h-8 bg-gray-200 rounded mb-6"></div>
+                <div className="space-y-4">
+                  <div>
+                    <div className="w-24 h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="w-full h-12 bg-gray-200 rounded"></div>
+                  </div>
+                  <div>
+                    <div className="w-20 h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="w-full h-12 bg-gray-200 rounded"></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="w-16 h-4 bg-gray-200 rounded mb-2"></div>
+                      <div className="w-full h-12 bg-gray-200 rounded"></div>
+                    </div>
+                    <div>
+                      <div className="w-16 h-4 bg-gray-200 rounded mb-2"></div>
+                      <div className="w-full h-12 bg-gray-200 rounded"></div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between pt-6">
+                    <div className="w-24 h-12 bg-gray-200 rounded"></div>
+                    <div className="w-40 h-12 bg-gray-200 rounded"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-xl shadow-sm p-6 animate-pulse">
+                <div className="w-32 h-6 bg-gray-200 rounded mb-4"></div>
+                <div className="space-y-4 mb-6">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center space-x-3">
+                      <div className="flex-1">
+                        <div className="w-32 h-4 bg-gray-200 rounded mb-1"></div>
+                        <div className="w-16 h-3 bg-gray-200 rounded"></div>
+                      </div>
+                      <div className="w-20 h-4 bg-gray-200 rounded"></div>
+                    </div>
+                  ))}
+                </div>
+                <div className="border-t border-gray-200 pt-4">
+                  <div className="flex justify-between">
+                    <div className="w-12 h-6 bg-gray-200 rounded"></div>
+                    <div className="w-24 h-6 bg-gray-200 rounded"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+            <div className="lg:col-span-2">
+              {step === 1 && (
               <div className="bg-white rounded-xl shadow-sm p-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">
                   Shipping Information
@@ -297,9 +355,12 @@ const CheckoutPage = () => {
               </div>
             </div>
           </div>
+            </div>
+          </div>
+        )}
         </div>
+        </main>
       </div>
-      <Footer />
     </div>
   )
 }
