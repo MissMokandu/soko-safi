@@ -178,16 +178,16 @@ const BuyerSidebar = ({ activeTab, setActiveTab }) => {
               </button>
 
               <button
-                onClick={() => handleTabClick("collections")}
+                onClick={() => handleTabClick("favourites")}
                 className={`w-full flex items-center ${isCollapsed ? "justify-center px-3" : "space-x-4 px-5"} py-4 rounded-xl transition-all duration-200 whitespace-nowrap group ${
-                  activeTab === "collections"
+                  activeTab === "favourites"
                     ? "bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg transform scale-[1.02]"
                     : "text-gray-700 hover:bg-white hover:shadow-md hover:transform hover:scale-[1.01]"
                 }`}
               >
                 <Heart
                   className={`w-6 h-6 flex-shrink-0 transition-colors ${
-                    activeTab === "collections"
+                    activeTab === "favourites"
                       ? "text-white"
                       : "text-primary-600 group-hover:text-primary-700"
                   }`}

@@ -1,1396 +1,465 @@
-import { useState, useEffect } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Star, Package, CreditCard, Plus, Minus, Search, Filter, Grid, List, MapPin, ShoppingBag, MessageSquare, Heart, ArrowLeft, User, Edit3, Save, X, Camera, CheckCircle } from 'lucide-react'
-import { CardSkeleton, ListSkeleton, StatsSkeleton } from '../Components/SkeletonLoader'
-import ReviewModal from '../Components/ReviewModal'
-import LazyImage from '../Components/LazyImage'
-import DashboardNavbar from '../Components/Layout/DashboardNavbar'
-import BuyerSidebar from '../Components/Layout/BuyerSidebar'
-import { api } from '../services/api'
-import { logError, handleAuthError } from '../utils/errorHandler'
-import { useAuth } from '../context/AuthContext'
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+
+import BuyerLayout from "./Buyer/BuyerLayout";
+import DashboardOverview from "./Buyer/DashboardOverview";
+import OrdersTab from "./Buyer/Tabs/OrdersTab";
+import MessagesTab from "./Buyer/Tabs/MessagesTab";
+import CollectionsTab from "./Buyer/Tabs/CollectionsTab";
+import PaymentsTab from "./Buyer/Tabs/PaymentsTab";
+import ProfileTab from "./Buyer/Tabs/ProfileTab";
+import ExploreTab from "./Buyer/Tabs/ExploreTab";
+import ProductDetailTab from "./Buyer/Tabs/ProductDetailTab";
+import ReviewModal from "../Components/ReviewModal";
+import { api } from "../services/api";
+import { logError, handleAuthError } from "../utils/errorHandler";
+import { useAuth } from "../context/AuthContext";
 
 const BuyerDashboard = ({ authLoading = false }) => {
-  const { user, isAuthenticated, isBuyer, logout, updateUser } = useAuth()
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dashboard')
-  const [selectedProductId, setSelectedProductId] = useState(searchParams.get('id'))
-  const [reviewModal, setReviewModal] = useState({ isOpen: false, product: null })
+  const { user, isAuthenticated, isBuyer, logout, updateUser } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(
+    searchParams.get("tab") || "dashboard"
+  );
+  const [selectedProductId, setSelectedProductId] = useState(
+    searchParams.get("id")
+  );
+  const [reviewModal, setReviewModal] = useState({
+    isOpen: false,
+    product: null,
+  });
 
   // State for API data
-  const [orders, setOrders] = useState([])
-  const [messages, setMessages] = useState([])
-  const [collections, setCollections] = useState([])
-  const [payments, setPayments] = useState([])
+  const [orders, setOrders] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [dashboardStats, setDashboardStats] = useState({
     total_orders: 0,
     total_collections: 0,
     total_messages: 0,
-    total_spent: 0
-  })
+    total_spent: 0,
+  });
 
   // Explore tab state
-  const [exploreProducts, setExploreProducts] = useState([])
-  const [exploreCategories, setExploreCategories] = useState([])
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('all')
-  const [sortBy, setSortBy] = useState('featured')
-  const [viewMode, setViewMode] = useState('grid')
+  const [exploreProducts, setExploreProducts] = useState([]);
+  const [exploreCategories, setExploreCategories] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [sortBy, setSortBy] = useState("featured");
+  const [viewMode, setViewMode] = useState("grid");
 
   // Loading and error states
-  const [loading, setLoading] = useState(false)
-  const [dashboardLoading, setDashboardLoading] = useState(true)
-  const [exploreLoading, setExploreLoading] = useState(false)
-  const [productLoading, setProductLoading] = useState(false)
-  const [error, setError] = useState(null)
-  
+  const [loading, setLoading] = useState(false);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [exploreLoading, setExploreLoading] = useState(false);
+  const [productLoading, setProductLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   // Product detail state
-  const [selectedProduct, setSelectedProduct] = useState(null)
-  const [quantity, setQuantity] = useState(1)
-  const [favoriteProducts, setFavoriteProducts] = useState(new Set())
-  
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [quantity, setQuantity] = useState(1);
+  const [favoriteProducts, setFavoriteProducts] = useState(new Set());
+
   // Profile state
-  const [isEditing, setIsEditing] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
+  const [isEditing, setIsEditing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [profile, setProfile] = useState({
-    full_name: '',
-    email: '',
-    phone: '',
-    location: '',
-    description: '',
-    profile_picture_url: ''
-  })
+    full_name: "",
+    email: "",
+    phone: "",
+    location: "",
+    description: "",
+    profile_picture_url: "",
+  });
 
   // Load dashboard data on component mount
   useEffect(() => {
     if (!authLoading && isAuthenticated && user) {
-      console.log('Loading buyer dashboard for user:', user)
-      loadDashboardData()
-      
+      console.log("Loading buyer dashboard for user:", user);
+      loadDashboardData();
+
       // Check URL parameter for tab
-      const tabParam = searchParams.get('tab')
-      const productId = searchParams.get('id')
-      if (tabParam === 'explore') {
-        setActiveTab('explore')
-        loadExploreData()
-      } else if (tabParam === 'product' && productId) {
-        setActiveTab('product')
-        setSelectedProductId(productId)
-        loadProductDetails(productId)
+      const tabParam = searchParams.get("tab");
+      const productId = searchParams.get("id");
+      if (tabParam === "explore") {
+        setActiveTab("explore");
+        loadExploreData();
+      } else if (tabParam === "product" && productId) {
+        setActiveTab("product");
+        setSelectedProductId(productId);
+        loadProductDetails(productId);
+      } else if (tabParam === "profile") {
+        setActiveTab("profile");
+        loadProfile();
       }
     } else if (!authLoading) {
-      console.log('User not authenticated, skipping dashboard load')
+      console.log("User not authenticated, skipping dashboard load");
     }
-  }, [authLoading, isAuthenticated, user, searchParams])
+  }, [authLoading, isAuthenticated, user, searchParams]);
 
   const loadDashboardData = async () => {
     try {
-      setDashboardLoading(true)
-      setError(null)
+      setDashboardLoading(true);
+      setError(null);
 
       // Load all dashboard data in parallel, but handle failures gracefully
       const results = await Promise.allSettled([
         api.orders.getAll(),
         api.messages.getConversations(),
         api.favorites.getAll(),
-        api.payments.getAll()
-      ])
+        api.payments.getAll(),
+      ]);
 
-      const ordersData = results[0].status === 'fulfilled' ? results[0].value : []
-      const messagesData = results[1].status === 'fulfilled' ? results[1].value : []
-      const collectionsData = results[2].status === 'fulfilled' ? results[2].value : []
-      const paymentsData = results[3].status === 'fulfilled' ? results[3].value : []
+      const ordersData =
+        results[0].status === "fulfilled" ? results[0].value : [];
+      const messagesData =
+        results[1].status === "fulfilled" ? results[1].value : [];
+      const collectionsData =
+        results[2].status === "fulfilled" ? results[2].value : [];
+      const paymentsData =
+        results[3].status === "fulfilled" ? results[3].value : [];
 
-      console.log('Dashboard data loaded:', { ordersData, messagesData, collectionsData, paymentsData })
+      console.log("Dashboard data loaded:", {
+        ordersData,
+        messagesData,
+        collectionsData,
+        paymentsData,
+      });
 
-      setOrders(ordersData || [])
-      setMessages(messagesData || [])
-      setCollections(collectionsData || [])
-      setPayments(paymentsData || [])
-      
+      setOrders(ordersData || []);
+      setMessages(messagesData || []);
+      setCollections(collectionsData || []);
+      setPayments(paymentsData || []);
+
       // Extract favorite product IDs
-      const favoriteIds = new Set((collectionsData || []).map(fav => fav.product_id || fav.id))
-      setFavoriteProducts(favoriteIds)
+      const favoriteIds = new Set(
+        (collectionsData || []).map((fav) => fav.product_id || fav.id)
+      );
+      setFavoriteProducts(favoriteIds);
 
       // Calculate dashboard stats
-      const completedPayments = (paymentsData || []).filter(p => p.status === 'completed')
-      const totalSpent = completedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)
-      
+      const completedPayments = (paymentsData || []).filter(
+        (p) => p.status === "completed"
+      );
+      const totalSpent = completedPayments.reduce(
+        (sum, p) => sum + (parseFloat(p.amount) || 0),
+        0
+      );
+
       setDashboardStats({
         total_orders: (ordersData || []).length,
         total_collections: (collectionsData || []).length,
         total_messages: (messagesData || []).length,
-        total_spent: totalSpent
-      })
+        total_spent: totalSpent,
+      });
 
       // Check if any critical errors occurred
-      const failedRequests = results.filter(r => r.status === 'rejected')
+      const failedRequests = results.filter((r) => r.status === "rejected");
       if (failedRequests.length > 0) {
-        console.warn('Some dashboard data failed to load:', failedRequests.map(r => r.reason?.message))
+        console.warn(
+          "Some dashboard data failed to load:",
+          failedRequests.map((r) => r.reason?.message)
+        );
       }
-
     } catch (error) {
-      handleAuthError(error, 'loadDashboardData')
+      handleAuthError(error, "loadDashboardData");
       // Set empty state instead of error for new users
-      setOrders([])
-      setMessages([])
-      setCollections([])
-      setPayments([])
-      setDashboardStats({ total_orders: 0, total_collections: 0, total_messages: 0, total_spent: 0 })
-      
-      if (error.message.includes('Please log in')) {
-        setError('Please log in to view your dashboard.')
+      setOrders([]);
+      setMessages([]);
+      setCollections([]);
+      setPayments([]);
+      setDashboardStats({
+        total_orders: 0,
+        total_collections: 0,
+        total_messages: 0,
+        total_spent: 0,
+      });
+
+      if (error.message.includes("Please log in")) {
+        setError("Please log in to view your dashboard.");
       } else {
-        console.warn('Dashboard endpoints failed, showing empty state for new user')
+        console.warn(
+          "Dashboard endpoints failed, showing empty state for new user"
+        );
       }
     } finally {
-      setDashboardLoading(false)
+      setDashboardLoading(false);
     }
-  }
-
-  const loadOrders = async () => {
-    try {
-      setLoading(true)
-      const ordersData = await api.orders.getAll()
-      setOrders(ordersData || [])
-    } catch (error) {
-      handleAuthError(error, 'loadOrders')
-      setError('Failed to load orders. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadMessages = async () => {
-    try {
-      setLoading(true)
-      const messagesData = await api.messages.getConversations()
-      setMessages(messagesData || [])
-    } catch (error) {
-      handleAuthError(error, 'loadMessages')
-      setError('Failed to load messages. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadCollections = async () => {
-    try {
-      setLoading(true)
-      const collectionsData = await api.favorites.getAll()
-      setCollections(collectionsData || [])
-    } catch (error) {
-      handleAuthError(error, 'loadCollections')
-      setError('Failed to load collections. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadPayments = async () => {
-    try {
-      setLoading(true)
-      const paymentsData = await api.payments.getAll()
-      setPayments(paymentsData || [])
-    } catch (error) {
-      console.error('Failed to load payments:', error)
-      setError('Failed to load payments. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  };
 
   const loadExploreData = async () => {
     try {
-      setExploreLoading(true)
+      setExploreLoading(true);
       const [productsResponse, categoriesResponse] = await Promise.all([
         api.products.getAll(),
         api.categories.getAll(),
-      ])
+      ]);
 
-      const productsArray = Array.isArray(productsResponse) ? productsResponse : []
-      console.log(`[FRONTEND_PRODUCTS] Loaded ${productsArray.length} products in explore page`);
-      setExploreProducts(productsArray)
+      const productsArray = Array.isArray(productsResponse)
+        ? productsResponse
+        : [];
+      console.log(
+        `[FRONTEND_PRODUCTS] Loaded ${productsArray.length} products in explore page`
+      );
+      setExploreProducts(productsArray);
 
-      const categoryMap = new Map()
-      productsArray.forEach(product => {
-        const category = product.category || 'other'
-        categoryMap.set(category.toLowerCase(), (categoryMap.get(category.toLowerCase()) || 0) + 1)
-      })
-      
+      const categoryMap = new Map();
+      productsArray.forEach((product) => {
+        const category = product.category || "other";
+        categoryMap.set(
+          category.toLowerCase(),
+          (categoryMap.get(category.toLowerCase()) || 0) + 1
+        );
+      });
+
       const categoriesWithCounts = [
-        { id: 'all', name: 'All Categories', count: productsArray.length },
-        ...categoriesResponse.map(cat => ({
+        { id: "all", name: "All Categories", count: productsArray.length },
+        ...categoriesResponse.map((cat) => ({
           id: cat.name.toLowerCase(),
           name: cat.name,
-          count: categoryMap.get(cat.name.toLowerCase()) || 0
-        }))
-      ]
-      
-      setExploreCategories(categoriesWithCounts)
+          count: categoryMap.get(cat.name.toLowerCase()) || 0,
+        })),
+      ];
+
+      setExploreCategories(categoriesWithCounts);
     } catch (error) {
-      handleAuthError(error, 'loadExploreData')
-      setError('Failed to load products. Please try again.')
+      handleAuthError(error, "loadExploreData");
+      setError("Failed to load products. Please try again.");
     } finally {
-      setExploreLoading(false)
+      setExploreLoading(false);
     }
-  }
+  };
 
   const loadProductDetails = async (productId) => {
     try {
-      setProductLoading(true)
-      const product = await api.products.getById(productId)
-      setSelectedProduct(product)
+      setProductLoading(true);
+      const product = await api.products.getById(productId);
+      setSelectedProduct(product);
     } catch (error) {
-      handleAuthError(error, 'loadProductDetails')
-      setError('Failed to load product details. Please try again.')
+      handleAuthError(error, "loadProductDetails");
+      setError("Failed to load product details. Please try again.");
     } finally {
-      setProductLoading(false)
+      setProductLoading(false);
     }
-  }
+  };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Delivered':
-      case 'Completed':
-        return 'bg-green-100 text-green-800'
-      case 'In Transit':
-        return 'bg-blue-100 text-blue-800'
-      case 'Processing':
-      case 'Pending':
-        return 'bg-yellow-100 text-yellow-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
 
-  // Ensure Unsplash images include formatting params and provide a network-safe fallback.
-  const ensureUnsplashFormat = (url) => {
-    if (!url) return url
+
+  const safeSrc = (url) => {
+    if (!url) return "/images/placeholder.jpg";
     try {
-      // If the hostname is images.unsplash.com and there is no auto=format param, append common params.
-      const parsed = new URL(url)
-      if (parsed.hostname.includes('images.unsplash.com')) {
-        // If the URL already contains auto= or q= assume it's formatted
-        if (!/auto=|q=/.test(parsed.search)) {
-          const sep = parsed.search ? '&' : '?'
-          return `${url}${sep}auto=format&fit=crop&q=80`
-        }
+      const parsed = new URL(url);
+      if (parsed.hostname.includes("images.unsplash.com") && !/auto=|q=/.test(parsed.search)) {
+        const sep = parsed.search ? "&" : "?";
+        return `${url}${sep}auto=format&fit=crop&q=80`;
       }
     } catch (e) {
       // ignore and return original
     }
-    return url
-  }
-
-  const safeSrc = (url, w = 200, h = 200) => {
-    const formatted = ensureUnsplashFormat(url)
-    return formatted || '/images/placeholder.jpg'
-  }
+    return url || "/images/placeholder.jpg";
+  };
 
   // Show role mismatch if user is not a buyer (only when not loading)
   if (!authLoading && user && !isBuyer) {
-    window.location.href = '/artisan-dashboard'
-    return null
+    window.location.href = "/artisan-dashboard";
+    return null;
   }
 
   if (!authLoading && !isAuthenticated) {
-    const { redirectToLogin } = require('../utils/auth')
-    redirectToLogin()
-    return null
+    const { redirectToLogin } = require("../utils/auth");
+    redirectToLogin();
+    return null;
   }
 
   const handleSidebarClick = (tab) => {
-    setActiveTab(tab)
-    switch(tab) {
-      case 'orders': loadOrders(); break;
-      case 'messages': loadMessages(); break;
-      case 'collections': loadCollections(); break;
-      case 'explore': loadExploreData(); break;
-      case 'payments': loadPayments(); break;
-      case 'profile': loadProfile(); break;
+    setActiveTab(tab);
+    switch (tab) {
+      case "explore":
+        loadExploreData();
+        break;
+      case "profile":
+        loadProfile();
+        break;
     }
-  }
+  };
 
   const toggleFavorite = async (productId) => {
     try {
-      const isFavorite = favoriteProducts.has(productId)
-      
+      const isFavorite = favoriteProducts.has(productId);
+
       if (isFavorite) {
-        await api.favorites.remove(productId)
-        setFavoriteProducts(prev => {
-          const newSet = new Set(prev)
-          newSet.delete(productId)
-          return newSet
-        })
+        await api.favorites.remove(productId);
+        setFavoriteProducts((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(productId);
+          return newSet;
+        });
       } else {
-        await api.favorites.add(productId)
-        setFavoriteProducts(prev => new Set([...prev, productId]))
+        await api.favorites.add(productId);
+        setFavoriteProducts((prev) => new Set([...prev, productId]));
       }
     } catch (error) {
-      console.error('Failed to toggle favorite:', error)
-      alert('Failed to update favorites. Please try again.')
+      console.error("Failed to toggle favorite:", error);
+      alert("Failed to update favorites. Please try again.");
     }
-  }
+  };
 
   const loadProfile = async () => {
     try {
-      const profileData = await api.profile.get()
+      const profileData = await api.profile.get();
       setProfile({
-        full_name: profileData.full_name || user?.full_name || '',
-        email: user?.email || '',
-        phone: profileData.phone || '',
-        location: profileData.location || '',
-        description: profileData.description || '',
-        profile_picture_url: profileData.profile_picture_url || ''
-      })
+        full_name: profileData.full_name || user?.full_name || "",
+        email: user?.email || "",
+        phone: profileData.phone || "",
+        location: profileData.location || "",
+        description: profileData.description || "",
+        profile_picture_url: profileData.profile_picture_url || "",
+      });
     } catch (error) {
-      console.error('Failed to load profile:', error)
+      console.error("Failed to load profile:", error);
     }
-  }
+  };
 
   const handleSaveProfile = async () => {
     try {
-      setLoading(true)
+      setLoading(true);
       const updatedProfile = await api.profile.update({
         full_name: profile.full_name,
         phone: profile.phone,
         location: profile.location,
         description: profile.description,
-        profile_picture_url: profile.profile_picture_url
-      })
-      updateUser(updatedProfile)
-      setIsEditing(false)
-      setShowSuccess(true)
-      setTimeout(() => setShowSuccess(false), 3000)
+        profile_picture_url: profile.profile_picture_url,
+      });
+      updateUser(updatedProfile);
+      setIsEditing(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
-      console.error('Profile update error:', error)
-      alert('Failed to update profile. Please try again.')
+      console.error("Profile update error:", error);
+      alert("Failed to update profile. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleImageUpload = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
+    const file = e.target.files[0];
+    if (!file) return;
 
     try {
-      setLoading(true)
-      const { uploadToCloudinary } = await import('../services/cloudinary')
-      const imageUrl = await uploadToCloudinary(file)
-      setProfile(prev => ({ ...prev, profile_picture_url: imageUrl }))
+      setLoading(true);
+      const { uploadToCloudinary } = await import("../services/cloudinary");
+      const imageUrl = await uploadToCloudinary(file);
+      setProfile((prev) => ({ ...prev, profile_picture_url: imageUrl }));
     } catch (error) {
-      alert('Failed to upload image. Please try again.')
+      alert("Failed to upload image. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <DashboardNavbar />
-      <div className="flex flex-col lg:flex-row">
-        <BuyerSidebar activeTab={activeTab} setActiveTab={handleSidebarClick} />
+    <BuyerLayout activeTab={activeTab} setActiveTab={handleSidebarClick}>
+      {activeTab === "dashboard" && (
+        <DashboardOverview
+          dashboardStats={dashboardStats}
+          dashboardLoading={dashboardLoading}
+          authLoading={authLoading}
+          error={error}
+          loadDashboardData={loadDashboardData}
+        />
+      )}
 
-        {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 animate-fade-in">
-          <div className="max-w-7xl mx-auto">
-            {/* Dashboard Overview */}
-            {activeTab === 'dashboard' && (
-              <>
-                <div className="mb-8">
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">Dashboard Overview</h1>
-                  <p className="text-gray-600">Welcome back! Here's your shopping activity at a glance.</p>
-                </div>
+      {activeTab === "orders" && (
+        <OrdersTab
+          orders={orders}
+          loading={loading}
+          authLoading={authLoading}
+          setReviewModal={setReviewModal}
+          safeSrc={safeSrc}
+        />
+      )}
 
-                {(dashboardLoading || authLoading) ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-12">
-                    <StatsSkeleton />
-                  </div>
-                ) : error ? (
-                  <div className="bg-red-50 border border-red-200 rounded-2xl p-8 mb-12">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                        <span className="text-red-600 font-bold">!</span>
-                      </div>
-                      <div>
-                        <h3 className="text-red-800 font-semibold">Error Loading Dashboard</h3>
-                        <p className="text-red-600 text-sm">{error}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={loadDashboardData}
-                      className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                    >
-                      Try Again
-                    </button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-12">
-                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-2xl border border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="p-3 bg-blue-500 rounded-xl">
-                          <ShoppingBag className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-blue-600">Total Orders</p>
-                          <p className="text-3xl font-bold text-blue-900">{dashboardStats.total_orders}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center text-sm text-blue-700">
-                        <span className="font-medium">+5%</span>
-                        <span className="ml-1">from last month</span>
-                      </div>
-                    </div>
-                    <div className="bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-2xl border border-green-200 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="p-3 bg-green-500 rounded-xl">
-                          <Heart className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-green-600">Collections</p>
-                          <p className="text-3xl font-bold text-green-900">{dashboardStats.total_collections}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center text-sm text-green-700">
-                        <span className="font-medium">+12%</span>
-                        <span className="ml-1">from last month</span>
-                      </div>
-                    </div>
-                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-8 rounded-2xl border border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="p-3 bg-purple-500 rounded-xl">
-                          <MessageSquare className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-purple-600">Messages</p>
-                          <p className="text-3xl font-bold text-purple-900">{dashboardStats.total_messages}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center text-sm text-purple-700">
-                        <span className="font-medium">+8%</span>
-                        <span className="ml-1">from last month</span>
-                      </div>
-                    </div>
-                    <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-8 rounded-2xl border border-orange-200 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="p-3 bg-orange-500 rounded-xl">
-                          <span className="text-white font-bold text-lg">KSH</span>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-orange-600">Total Spent</p>
-                          <p className="text-3xl font-bold text-orange-900">{dashboardStats.total_spent.toLocaleString()}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center text-sm text-orange-700">
-                        <span className="font-medium">+15%</span>
-                        <span className="ml-1">from last month</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
+      {activeTab === "messages" && (
+        <MessagesTab
+          messages={messages}
+          loading={loading}
+          authLoading={authLoading}
+        />
+      )}
 
+      {activeTab === "favourites" && (
+        <CollectionsTab
+          collections={collections}
+          loading={loading}
+          authLoading={authLoading}
+          safeSrc={safeSrc}
+        />
+      )}
 
-              </>
-            )}
+      {activeTab === "explore" && (
+        <ExploreTab
+          exploreProducts={exploreProducts}
+          exploreCategories={exploreCategories}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          exploreLoading={exploreLoading}
+          authLoading={authLoading}
+          favoriteProducts={favoriteProducts}
+          toggleFavorite={toggleFavorite}
+        />
+      )}
 
-            {/* Orders Tab */}
-            {activeTab === 'orders' && (
-              <>
-                <div className="mb-8">
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">My Orders</h1>
-                  <p className="text-gray-600">Track your purchases and manage your order history.</p>
-                </div>
+      {activeTab === "product" && (
+        <ProductDetailTab
+          selectedProduct={selectedProduct}
+          productLoading={productLoading}
+          authLoading={authLoading}
+          quantity={quantity}
+          setQuantity={setQuantity}
+          favoriteProducts={favoriteProducts}
+          toggleFavorite={toggleFavorite}
+          setActiveTab={setActiveTab}
+        />
+      )}
 
-                {(loading || authLoading) ? (
-                  <div className="space-y-6">
-                    <ListSkeleton />
-                  </div>
-                ) : orders.length === 0 ? (
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-16 text-center rounded-2xl border-2 border-dashed border-gray-300">
-                    <div className="w-20 h-20 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <ShoppingBag className="w-10 h-10 text-primary-600" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-3">No orders yet</h3>
-                    <p className="text-gray-600 mb-8 max-w-md mx-auto">Start your shopping journey by exploring beautiful handmade crafts from talented artisans.</p>
-                    <Link
-                      to="/explore"
-                      className="bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold px-8 py-4 rounded-xl inline-flex items-center space-x-3 hover:from-primary-600 hover:to-primary-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                    >
-                      <span>Explore Products</span>
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {orders.map((order) => (
-                      <div key={order.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                        <div className="p-8">
-                          <div className="flex items-start justify-between mb-6">
-                            <div className="flex items-start space-x-6">
-                              <div className="relative">
-                                <img
-                                  src={safeSrc(order.image)}
-                                  alt={order.title || order.product}
-                                  className="w-24 h-24 rounded-xl object-cover shadow-md"
-                                />
-                                <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                                </div>
-                              </div>
-                              <div className="flex-1">
-                                <h3 className="font-bold text-gray-900 text-xl mb-2">{order.title || order.product}</h3>
-                                <p className="text-gray-600 mb-1">by {order.artisan_name || order.artisan}</p>
-                                <p className="text-sm text-gray-500">Order #{order.id} • {order.created_at ? new Date(order.created_at).toLocaleDateString() : order.date}</p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-3xl font-bold text-primary-600 mb-3">KSH {(order.total_amount || order.price).toLocaleString()}</p>
-                              <span className={`px-4 py-2 text-sm font-semibold rounded-full border ${
-                                (order.status || '').toLowerCase() === 'completed' || (order.status || '').toLowerCase() === 'delivered'
-                                  ? 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border-green-300'
-                                  : (order.status || '').toLowerCase() === 'in transit' || (order.status || '').toLowerCase() === 'processing'
-                                  ? 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border-blue-300'
-                                  : 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border-yellow-300'
-                              }`}>
-                                {order.status || 'Processing'}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-4 pt-6 border-t border-gray-100">
-                            <Link to={`/product/${order.product_id || order.id.replace('#', '')}`} className="flex-1 bg-gray-100 text-gray-700 font-semibold py-3 px-4 rounded-xl hover:bg-gray-200 transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2">
-                              <span>View Product</span>
-                            </Link>
-                            {(order.status || '').toLowerCase() === 'completed' || (order.status || '').toLowerCase() === 'delivered' ? (
-                              <button
-                                onClick={() => setReviewModal({ isOpen: true, product: order })}
-                                className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold py-3 px-4 rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2"
-                              >
-                                <Star className="w-4 h-4" />
-                                <span>Write Review</span>
-                              </button>
-                            ) : null}
-                            <Link to={`/messages/${order.artisan_id}`} className="flex-1 bg-blue-50 text-blue-600 font-semibold py-3 px-4 rounded-xl hover:bg-blue-100 transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2">
-                              <MessageSquare className="w-4 h-4" />
-                              <span>Message Artisan</span>
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
+      {activeTab === "payments" && (
+        <PaymentsTab
+          payments={payments}
+          loading={loading}
+          authLoading={authLoading}
+        />
+      )}
 
-            {/* Messages Tab */}
-            {activeTab === 'messages' && (
-              <>
-                <div className="mb-8">
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">Messages</h1>
-                  <p className="text-gray-600">Communicate with artisans about your orders and inquiries.</p>
-                </div>
+      {activeTab === "profile" && (
+        <ProfileTab
+          profile={profile}
+          isEditing={isEditing}
+          setIsEditing={setIsEditing}
+          loading={loading}
+          authLoading={authLoading}
+          showSuccess={showSuccess}
+          setProfile={setProfile}
+          handleSaveProfile={handleSaveProfile}
+          handleImageUpload={handleImageUpload}
+        />
+      )}
 
-                {(loading || authLoading) ? (
-                  <div className="space-y-6">
-                    <ListSkeleton />
-                  </div>
-                ) : messages.length === 0 ? (
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-16 text-center rounded-2xl border-2 border-dashed border-gray-300">
-                    <div className="w-20 h-20 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <MessageSquare className="w-10 h-10 text-primary-600" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-3">No messages yet</h3>
-                    <p className="text-gray-600 mb-8 max-w-md mx-auto">When you contact artisans or they respond to your inquiries, messages will appear here.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {messages.map((message) => (
-                      <div key={message.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
-                              <User className="w-6 h-6 text-blue-600" />
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2 mb-1">
-                                <h3 className="text-xl font-bold text-gray-900">{message.sender_name || message.artisan}</h3>
-                                {message.is_read === false && (
-                                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                                )}
-                              </div>
-                              <p className="text-gray-600">{message.sender_email || 'Artisan'}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                              {message.timestamp ? new Date(message.timestamp).toLocaleDateString() : message.time}
-                            </span>
-                          </div>
-                        </div>
-                        <p className={`p-4 rounded-xl border-l-4 ${
-                          message.is_read === false
-                            ? 'text-gray-700 bg-blue-50 border-blue-500'
-                            : 'text-gray-700 bg-gray-50 border-gray-300'
-                        }`}>
-                          {message.message || message.lastMessage}
-                        </p>
-                        <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
-                          <div className="flex space-x-3">
-                            <Link
-                              to={`/messages/${message.sender_id}`}
-                              className="bg-blue-50 text-blue-600 font-semibold px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors"
-                            >
-                              Reply
-                            </Link>
-                            {message.is_read === false && (
-                              <button className="bg-gray-50 text-gray-600 font-semibold px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">
-                                Mark as Read
-                              </button>
-                            )}
-                          </div>
-                          <span className={`text-sm ${message.is_read === false ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>
-                            {message.is_read === false ? 'New message' : 'Read'}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Collections Tab */}
-            {activeTab === 'collections' && (
-              <>
-                <div className="mb-8">
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">Favorite Products</h1>
-                  <p className="text-gray-600">Your saved favorite handcrafted items from talented artisans.</p>
-                </div>
-
-                {(loading || authLoading) ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {[1, 2, 3, 4].map((i) => <CardSkeleton key={i} />)}
-                  </div>
-                ) : collections.length === 0 ? (
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-16 text-center rounded-2xl border-2 border-dashed border-gray-300">
-                    <div className="w-20 h-20 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <Heart className="w-10 h-10 text-primary-600" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-3">No favorites yet</h3>
-                    <p className="text-gray-600 mb-8 max-w-md mx-auto">Start adding products to your favorites by clicking the heart icon on products you love.</p>
-                    <Link
-                      to="/buyer-dashboard?tab=explore"
-                      className="bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold px-8 py-4 rounded-xl inline-flex items-center space-x-3 hover:from-primary-600 hover:to-primary-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                    >
-                      <span>Explore Products</span>
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {collections.map((favorite) => (
-                      <Link
-                        key={favorite.id}
-                        to={`/buyer-dashboard?tab=product&id=${favorite.product_id || favorite.id}`}
-                        className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
-                      >
-                        <div className="aspect-square overflow-hidden relative">
-                          <img
-                            src={safeSrc(favorite.product?.image || favorite.image, 400, 400)}
-                            alt={favorite.product?.title || favorite.title}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          />
-                          <div className="absolute top-3 right-3 p-2 bg-white/80 rounded-full">
-                            <Heart className="w-4 h-4 text-red-500 fill-current" />
-                          </div>
-                        </div>
-                        <div className="p-6">
-                          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 mb-1">
-                            {favorite.product?.title || favorite.title}
-                          </h3>
-                          <p className="text-sm text-gray-500 mb-2">by {favorite.product?.artisan_name || favorite.artisan_name || 'Unknown'}</p>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xl font-bold text-gray-900">
-                              KSh {(favorite.product?.price || favorite.price || 0).toLocaleString()}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              Added {favorite.created_at ? new Date(favorite.created_at).toLocaleDateString() : 'Recently'}
-                            </span>
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Explore Tab */}
-            {activeTab === 'explore' && (
-              <>
-                <div className="mb-8">
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">Explore Products</h1>
-                  <p className="text-gray-600">Discover unique handcrafted pieces from talented artisans.</p>
-                </div>
-
-                <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-                  <div className="relative max-w-2xl">
-                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      placeholder="Search for products, artisans, or categories..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 text-lg"
-                    />
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-2xl shadow-sm p-6 mb-8">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div className="flex flex-wrap gap-2">
-                      {exploreCategories.map((category) => (
-                        <button
-                          key={category.id}
-                          onClick={() => setSelectedCategory(category.id)}
-                          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                            selectedCategory === category.id
-                              ? "bg-primary-600 text-white"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          }`}
-                        >
-                          {category.name} ({category.count})
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                      >
-                        <option value="featured">Featured</option>
-                        <option value="newest">Newest</option>
-                        <option value="price-low">Price: Low to High</option>
-                        <option value="price-high">Price: High to Low</option>
-                        <option value="rating">Highest Rated</option>
-                      </select>
-
-                      <div className="flex border border-gray-300 rounded-lg">
-                        <button
-                          onClick={() => setViewMode("grid")}
-                          className={`p-2 ${
-                            viewMode === "grid"
-                              ? "bg-primary-600 text-white"
-                              : "text-gray-600 hover:bg-gray-100"
-                          }`}
-                        >
-                          <Grid className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => setViewMode("list")}
-                          className={`p-2 ${
-                            viewMode === "list"
-                              ? "bg-primary-600 text-white"
-                              : "text-gray-600 hover:bg-gray-100"
-                          }`}
-                        >
-                          <List className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {(() => {
-                  const filteredProducts = exploreProducts.filter(product => {
-                    const matchesSearch = product.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                         product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                         product.artisan_name?.toLowerCase().includes(searchTerm.toLowerCase())
-                    const matchesCategory = selectedCategory === 'all' || product.category?.toLowerCase() === selectedCategory
-                    return matchesSearch && matchesCategory
-                  })
-
-                  const sortedProducts = [...filteredProducts].sort((a, b) => {
-                    switch (sortBy) {
-                      case "price-low":
-                        return (a.price || 0) - (b.price || 0)
-                      case "price-high":
-                        return (b.price || 0) - (a.price || 0)
-                      case "rating":
-                        return (b.rating || 0) - (a.rating || 0)
-                      case "newest":
-                        return new Date(b.created_at || 0) - new Date(a.created_at || 0)
-                      default:
-                        return 0
-                    }
-                  })
-
-                  return (
-                    <div className={`${
-                      viewMode === "grid"
-                        ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                        : "space-y-4"
-                    }`}>
-                      {sortedProducts.map((product) => (
-                        <Link
-                          key={product.id}
-                          to={`/buyer-dashboard?tab=product&id=${product.id}`}
-                          className={`group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden ${
-                            viewMode === "list" ? "flex" : ""
-                          }`}
-                        >
-                          <div className={`relative ${
-                            viewMode === "list" ? "w-48 flex-shrink-0" : "aspect-square"
-                          } overflow-hidden`}>
-                            <LazyImage
-                              src={product.image}
-                              alt={product.title}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            />
-                            <button 
-                              onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                toggleFavorite(product.id)
-                              }}
-                              className={`absolute top-3 right-3 p-2 rounded-full transition-all ${
-                                favoriteProducts.has(product.id)
-                                  ? 'bg-red-100/90 text-red-500 opacity-100'
-                                  : 'bg-white/80 text-gray-600 opacity-0 group-hover:opacity-100 hover:text-red-500'
-                              }`}
-                            >
-                              <Heart className={`w-4 h-4 ${
-                                favoriteProducts.has(product.id) ? 'fill-current' : ''
-                              }`} />
-                            </button>
-                          </div>
-
-                          <div className={`p-6 ${viewMode === "list" ? "flex-1" : ""}`}>
-                            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 mb-1">
-                              {product.title}
-                            </h3>
-                            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                              <MapPin className="w-3 h-3" />
-                              <span>{product.location || "Kenya"}</span>
-                              <span>•</span>
-                              <span>by {product.artisan_name || "Unknown"}</span>
-                            </div>
-
-                            <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                              {product.description}
-                            </p>
-
-                            <div className="flex items-center justify-between">
-                              <span className="text-2xl font-bold text-gray-900">
-                                KSh {product.price?.toLocaleString() || "N/A"}
-                              </span>
-                              <span className={`text-sm font-medium px-3 py-1 rounded-full ${
-                                product.in_stock
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-red-100 text-red-700"
-                              }`}>
-                                {product.in_stock ? "In Stock" : "Out of Stock"}
-                              </span>
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  )
-                })()} 
-
-                {(exploreLoading || authLoading) && (
-                  <div className={`${
-                    viewMode === "grid"
-                      ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                      : "space-y-4"
-                  }`}>
-                    {[1, 2, 3, 4, 5, 6].map((i) => <CardSkeleton key={i} />)}
-                  </div>
-                )}
-                {!exploreLoading && exploreProducts.length === 0 && (
-                  <div className="text-center py-16 text-gray-600">
-                    <Search className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                    <p>No products found. Try adjusting your filters.</p>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Product Detail Tab */}
-            {activeTab === 'product' && (
-              <>
-                <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
-                  <button onClick={() => setActiveTab('explore')} className="hover:text-primary-600">Explore</button>
-                  <span>/</span>
-                  <span className="text-gray-900">{selectedProduct?.title || 'Product'}</span>
-                </nav>
-
-                {(productLoading || authLoading) ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-                    <div className="space-y-4">
-                      <div className="bg-white rounded-2xl overflow-hidden shadow-sm relative group">
-                        <div className="relative w-full h-[500px] bg-gray-200 animate-pulse"></div>
-                      </div>
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="w-full h-24 bg-gray-200 rounded-lg animate-pulse"></div>
-                      </div>
-                    </div>
-                    <div className="space-y-6">
-                      <div className="bg-white rounded-2xl shadow-sm p-8 animate-pulse">
-                        <div className="w-3/4 h-8 bg-gray-200 rounded mb-4"></div>
-                        <div className="w-1/2 h-6 bg-gray-200 rounded mb-6"></div>
-                        <div className="w-1/3 h-10 bg-gray-200 rounded mb-6"></div>
-                        <div className="space-y-2 mb-6">
-                          <div className="w-full h-4 bg-gray-200 rounded"></div>
-                          <div className="w-5/6 h-4 bg-gray-200 rounded"></div>
-                        </div>
-                        <div className="flex space-x-4">
-                          <div className="flex-1 h-12 bg-gray-200 rounded-xl"></div>
-                          <div className="w-12 h-12 bg-gray-200 rounded-xl"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : selectedProduct ? (
-                  <>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-                      <div className="space-y-4">
-                        <div className="bg-white rounded-2xl overflow-hidden shadow-sm relative group">
-                          <div className="relative w-full h-[500px] object-cover">
-                            <LazyImage
-                              src={selectedProduct.image_url || selectedProduct.image}
-                              alt={selectedProduct.title}
-                              className="w-full h-[500px] object-cover opacity-100 transition-opacity duration-300"
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-3 gap-4">
-                          <button className="rounded-lg overflow-hidden border-2 transition-all duration-200 border-primary-600 ring-2 ring-primary-100">
-                            <div className="relative w-full h-24 object-cover">
-                              <LazyImage
-                                src={selectedProduct.image_url || selectedProduct.image}
-                                alt={`${selectedProduct.title} 1`}
-                                className="w-full h-24 object-cover opacity-100 transition-opacity duration-300"
-                              />
-                            </div>
-                          </button>
-                        </div>
-                      </div>
-                      <div className="space-y-6">
-                        <div className="bg-white rounded-2xl shadow-sm p-8">
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <span className="text-sm text-primary-600 font-medium bg-primary-50 px-3 py-1 rounded-full">
-                                  {selectedProduct.category || 'Handcraft'}
-                                </span>
-                                <span className="text-sm text-gray-500">•</span>
-                                <span className="text-sm text-gray-600">{selectedProduct.subcategory || 'Art'}</span>
-                              </div>
-                              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">{selectedProduct.title}</h1>
-                              <div className="flex items-center mt-2 space-x-2">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star key={i} className={`w-5 h-5 ${i < 4 ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
-                                ))}
-                                <span className="text-gray-600">(12 reviews)</span>
-                              </div>
-                            </div>
-                            <button 
-                              onClick={() => toggleFavorite(selectedProduct.id)}
-                              className={`p-3 rounded-full transition-colors ${
-                                favoriteProducts.has(selectedProduct.id)
-                                  ? 'bg-red-100 text-red-500'
-                                  : 'bg-gray-100 text-gray-400 hover:bg-red-50 hover:text-red-400'
-                              }`}
-                            >
-                              <Heart className={`w-6 h-6 ${
-                                favoriteProducts.has(selectedProduct.id) ? 'fill-current' : ''
-                              }`} />
-                            </button>
-                          </div>
-                          <div className="mb-6">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <span className="text-4xl font-bold text-gray-900">KSh {selectedProduct.price?.toLocaleString()}</span>
-                            </div>
-                            <div className="flex items-center space-x-4">
-                              <span className="flex items-center space-x-2 text-sm font-medium text-green-600">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span>In Stock ({selectedProduct.stock || 10} left)</span>
-                              </span>
-                            </div>
-                          </div>
-                          <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-700 mb-3">Quantity</label>
-                            <div className="flex items-center space-x-4">
-                              <button 
-                                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                className="w-12 h-12 rounded-lg border-2 border-gray-200 flex items-center justify-center hover:border-primary-300 hover:bg-primary-50 transition-colors"
-                              >
-                                <Minus className="w-5 h-5" />
-                              </button>
-                              <span className="text-xl font-semibold w-16 text-center">{quantity}</span>
-                              <button 
-                                onClick={() => setQuantity(quantity + 1)}
-                                className="w-12 h-12 rounded-lg border-2 border-gray-200 flex items-center justify-center hover:border-primary-300 hover:bg-primary-50 transition-colors"
-                              >
-                                <Plus className="w-5 h-5" />
-                              </button>
-                            </div>
-                          </div>
-                          <div className="space-y-3">
-                            <button 
-                              onClick={() => navigate(`/checkout?product=${selectedProduct.id}&quantity=${quantity}`)}
-                              className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                            >
-                              <span>Buy Now</span>
-                              <span className="text-lg">•</span>
-                              <span>KSh {(selectedProduct.price * quantity)?.toLocaleString()}</span>
-                            </button>
-                            <button 
-                              onClick={async () => {
-                                try {
-                                  await api.cart.add(selectedProduct.id, quantity)
-                                  alert('Product added to cart!')
-                                } catch (error) {
-                                  console.error('Failed to add to cart:', error)
-                                  alert('Failed to add to cart. Please try again.')
-                                }
-                              }}
-                              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-4 px-6 rounded-xl transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                            >
-                              <ShoppingBag className="w-5 h-5" />
-                              <span>Add to Cart</span>
-                            </button>
-                          </div>
-                        </div>
-                        <div className="bg-white p-6 rounded-2xl shadow-sm">
-                          <h3 className="font-semibold text-lg mb-4">Meet the Artisan</h3>
-                          <div className="flex items-center space-x-4">
-                            <img
-                              alt={selectedProduct.artisan_name || 'Unknown Artisan'}
-                              className="w-16 h-16 rounded-full object-cover"
-                              src="/images/placeholder.svg"
-                            />
-                            <div>
-                              <h4 className="font-semibold text-gray-900">{selectedProduct.artisan_name || 'Unknown Artisan'}</h4>
-                              <p className="text-gray-600">Kenya</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-12">
-                      <div className="bg-white rounded-2xl shadow-sm p-8">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-6">Description</h2>
-                        <div className="prose prose-gray max-w-none">
-                          <p className="text-gray-700 leading-relaxed mb-4">{selectedProduct.description}</p>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                            <div>
-                              <h4 className="font-semibold text-gray-900 mb-2">Materials</h4>
-                              <ul className="text-gray-600 space-y-1">
-                                <li>• Locally sourced clay</li>
-                                <li>• Natural mineral glazes</li>
-                                <li>• Traditional firing techniques</li>
-                              </ul>
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-gray-900 mb-2">Care Instructions</h4>
-                              <ul className="text-gray-600 space-y-1">
-                                <li>• Hand wash only</li>
-                                <li>• Food safe glaze</li>
-                                <li>• Avoid extreme temperature changes</li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-12">
-                      <div className="bg-white rounded-2xl shadow-sm p-8">
-                        <div className="flex items-center justify-between mb-6">
-                          <h2 className="text-2xl font-bold text-gray-900">Customer Reviews (0)</h2>
-                          <button className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors">
-                            Write a Review
-                          </button>
-                        </div>
-                        <div className="space-y-8"></div>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center py-16">
-                    <p className="text-gray-600">Product not found</p>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Payment History Tab */}
-            {activeTab === 'payments' && (
-              <>
-                <div className="mb-8">
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">Payment History</h1>
-                  <p className="text-gray-600">View all your payment transactions and receipts.</p>
-                </div>
-
-                {(loading || authLoading) ? (
-                  <div className="space-y-6">
-                    <ListSkeleton />
-                  </div>
-                ) : payments.length === 0 ? (
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-16 text-center rounded-2xl border-2 border-dashed border-gray-300">
-                    <div className="w-20 h-20 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <CreditCard className="w-10 h-10 text-primary-600" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-3">No payment history</h3>
-                    <p className="text-gray-600 mb-8 max-w-md mx-auto">Your completed payment transactions will appear here once you make purchases.</p>
-                  </div>
-                ) : (
-                  <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                          <tr>
-                            <th className="px-8 py-6 text-left text-sm font-bold text-gray-900">Order ID</th>
-                            <th className="px-8 py-6 text-left text-sm font-bold text-gray-900">Date</th>
-                            <th className="px-8 py-6 text-left text-sm font-bold text-gray-900">Method</th>
-                            <th className="px-8 py-6 text-left text-sm font-bold text-gray-900">Amount</th>
-                            <th className="px-8 py-6 text-left text-sm font-bold text-gray-900">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {payments.map((payment) => (
-                            <tr key={payment.id} className="hover:bg-gray-50 transition-colors">
-                              <td className="px-8 py-6 text-sm font-semibold text-gray-900">
-                                #{payment.order_id || payment.orderId}
-                              </td>
-                              <td className="px-8 py-6 text-sm text-gray-600">
-                                {payment.created_at ? new Date(payment.created_at).toLocaleDateString() : payment.date}
-                              </td>
-                              <td className="px-8 py-6 text-sm text-gray-600">
-                                <div className="flex items-center space-x-2">
-                                  <CreditCard className="w-4 h-4 text-gray-400" />
-                                  <span>{payment.method || 'M-Pesa'}</span>
-                                </div>
-                              </td>
-                              <td className="px-8 py-6 text-sm font-bold text-primary-600">
-                                KSH {(payment.amount || 0).toLocaleString()}
-                              </td>
-                              <td className="px-8 py-6">
-                                <span className={`px-4 py-2 text-xs font-semibold rounded-full border ${
-                                  (payment.status || '').toLowerCase() === 'completed'
-                                    ? 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border-green-300'
-                                    : (payment.status || '').toLowerCase() === 'pending'
-                                    ? 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border-yellow-300'
-                                    : 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 border-red-300'
-                                }`}>
-                                  {payment.status || 'Completed'}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Profile Tab */}
-            {activeTab === 'profile' && (
-              <>
-                <div className="mb-8">
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">Profile</h1>
-                  <p className="text-gray-600">Manage your account information and preferences.</p>
-                </div>
-
-                {showSuccess && (
-                  <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-center space-x-3">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="text-green-800 font-medium">Profile updated successfully!</span>
-                  </div>
-                )}
-
-                {(loading || authLoading) ? (
-                  <div className="bg-white rounded-2xl shadow-sm p-8 animate-pulse">
-                    <div className="flex items-center justify-between mb-8">
-                      <div className="w-24 h-8 bg-gray-200 rounded"></div>
-                      <div className="w-32 h-10 bg-gray-200 rounded"></div>
-                    </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                      <div className="lg:col-span-1 text-center">
-                        <div className="w-32 h-32 bg-gray-200 rounded-full mx-auto"></div>
-                      </div>
-                      <div className="lg:col-span-2 space-y-6">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                          <div key={i}>
-                            <div className="w-20 h-4 bg-gray-200 rounded mb-2"></div>
-                            <div className="w-full h-6 bg-gray-200 rounded"></div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-white rounded-2xl shadow-sm p-8">
-                    <div className="flex items-center justify-between mb-8">
-                      <h2 className="text-2xl font-bold text-gray-900">Personal Information</h2>
-                      {!isEditing ? (
-                        <button
-                          onClick={() => setIsEditing(true)}
-                          className="flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                          <span>Edit Profile</span>
-                        </button>
-                      ) : (
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => setIsEditing(false)}
-                            className="flex items-center space-x-2 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
-                          >
-                            <X className="w-4 h-4" />
-                            <span>Cancel</span>
-                          </button>
-                          <button
-                            onClick={handleSaveProfile}
-                            disabled={loading}
-                            className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-                          >
-                            <Save className="w-4 h-4" />
-                            <span>{loading ? 'Saving...' : 'Save'}</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                      <div className="lg:col-span-1">
-                        <div className="text-center">
-                          <div className="relative inline-block">
-                            {profile.profile_picture_url ? (
-                              <img
-                                src={profile.profile_picture_url}
-                                alt="Profile"
-                                className="w-32 h-32 rounded-full object-cover mx-auto shadow-lg"
-                              />
-                            ) : (
-                              <div className="w-32 h-32 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center mx-auto shadow-lg">
-                                <User className="w-16 h-16 text-white" />
-                              </div>
-                            )}
-                            {isEditing && (
-                              <label className="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                                <Camera className="w-4 h-4 text-gray-600" />
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={handleImageUpload}
-                                  className="hidden"
-                                />
-                              </label>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="lg:col-span-2 space-y-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Full Name
-                          </label>
-                          {isEditing ? (
-                            <input
-                              type="text"
-                              value={profile.full_name}
-                              onChange={(e) => setProfile(prev => ({ ...prev, full_name: e.target.value }))}
-                              className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                            />
-                          ) : (
-                            <p className="text-gray-900 text-lg">{profile.full_name || 'Not provided'}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Email
-                          </label>
-                          <p className="text-gray-900 text-lg">{profile.email}</p>
-                          <p className="text-sm text-gray-500">Email cannot be changed</p>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Phone
-                          </label>
-                          {isEditing ? (
-                            <input
-                              type="tel"
-                              value={profile.phone}
-                              onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
-                              className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                            />
-                          ) : (
-                            <p className="text-gray-900 text-lg">{profile.phone || 'Not provided'}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Location
-                          </label>
-                          {isEditing ? (
-                            <input
-                              type="text"
-                              value={profile.location}
-                              onChange={(e) => setProfile(prev => ({ ...prev, location: e.target.value }))}
-                              className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                            />
-                          ) : (
-                            <p className="text-gray-900 text-lg">{profile.location || 'Not provided'}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Bio
-                          </label>
-                          {isEditing ? (
-                            <textarea
-                              value={profile.description}
-                              onChange={(e) => setProfile(prev => ({ ...prev, description: e.target.value }))}
-                              rows={4}
-                              className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                              placeholder="Tell us about yourself..."
-                            />
-                          ) : (
-                            <p className="text-gray-900 text-lg">{profile.description || 'No bio provided'}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </main>
-      </div>
-      
       <ReviewModal
         isOpen={reviewModal.isOpen}
         onClose={() => setReviewModal({ isOpen: false, product: null })}
         product={reviewModal.product}
       />
-    </div>
-  )
-}
+    </BuyerLayout>
+  );
+};
 
-export default BuyerDashboard
+export default BuyerDashboard;
