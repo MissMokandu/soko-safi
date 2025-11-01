@@ -24,6 +24,8 @@ const ProductDetailPage = () => {
   const [error, setError] = useState(null)
   const [addingToCart, setAddingToCart] = useState(false)
   const [buyingNow, setBuyingNow] = useState(false)
+  const [addingToWishlist, setAddingToWishlist] = useState(false)
+  const [submittingReview, setSubmittingReview] = useState(false)
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -120,19 +122,9 @@ const ProductDetailPage = () => {
         throw new Error('Product ID not found')
       }
       
-      // Check session first
-      console.log('Checking session before adding to cart...')
-      const session = await api.auth.getSession()
-      console.log('Session check result:', session)
-      
-      if (!session || !session.authenticated) {
-        alert('Your session has expired. Please log in again.')
-        navigate('/login')
-        return
-      }
-      
       await api.cart.add(productId, quantity)
       alert(`Added ${quantity} ${product.title} to cart!`)
+      navigate('/cart')
     } catch (error) {
       console.error('Failed to add to cart:', error)
       if (error.message.includes('Internal Server Error')) {
@@ -155,17 +147,12 @@ const ProductDetailPage = () => {
 
     try {
       setBuyingNow(true)
-      
-      // Ensure we have a valid product ID
       const productId = product.id || id
       if (!productId) {
         throw new Error('Product ID not found')
       }
       
-      console.log('Buy now - adding to cart:', { productId, quantity })
       await api.cart.add(productId, quantity)
-      
-      // Navigate to checkout immediately
       navigate('/checkout')
       
     } catch (error) {
@@ -182,28 +169,74 @@ const ProductDetailPage = () => {
   };
 
   const handleWishlistToggle = async () => {
+    if (!isAuthenticated) {
+      alert('Please log in to add items to favorites')
+      navigate('/login')
+      return
+    }
+
+    if (addingToWishlist) return
+
     try {
-      if (isWishlisted) await api.favorites.remove(product.id);
-      else await api.favorites.add(product.id);
-      setIsWishlisted(!isWishlisted);
+      setAddingToWishlist(true)
+      const productId = product.id || id
+      if (!productId) {
+        throw new Error('Product ID not found')
+      }
+
+      if (isWishlisted) {
+        await api.favorites.remove(productId)
+        alert(`Removed ${product.title} from favorites`)
+      } else {
+        await api.favorites.add(productId)
+        await api.cart.add(productId, 1)
+        alert(`Added ${product.title} to favorites and cart!`)
+      }
+      setIsWishlisted(!isWishlisted)
     } catch (error) {
-      alert("Failed to update wishlist. Please try again.");
+      console.error('Failed to update wishlist:', error)
+      if (error.message.includes('Authentication required')) {
+        alert('Please log in to add items to favorites')
+        navigate('/login')
+      } else {
+        alert(error.message || "Failed to update wishlist. Please try again.")
+      }
+    } finally {
+      setAddingToWishlist(false)
     }
   };
 
-  const handleWriteReview = () => setShowReviewModal(true);
+  const handleWriteReview = () => {
+    if (!isAuthenticated) {
+      alert('Please log in to write a review')
+      navigate('/login')
+      return
+    }
+    setShowReviewModal(true)
+  };
 
   const handleReviewSubmit = async (reviewData) => {
+    if (submittingReview) return
+
     try {
+      setSubmittingReview(true)
       await api.reviews.create({
         product_id: product.id,
         rating: reviewData.rating,
         comment: reviewData.review,
-      });
-      alert("Review submitted successfully!");
-      setShowReviewModal(false);
-    } catch {
-      alert("Failed to submit review. Please try again.");
+      })
+      alert("Review submitted successfully!")
+      setShowReviewModal(false)
+    } catch (error) {
+      console.error('Failed to submit review:', error)
+      if (error.message.includes('Authentication required')) {
+        alert('Please log in to write a review')
+        navigate('/login')
+      } else {
+        alert(error.message || "Failed to submit review. Please try again.")
+      }
+    } finally {
+      setSubmittingReview(false)
     }
   }
 
@@ -296,17 +329,22 @@ const ProductDetailPage = () => {
                   </div>
                   <button
                     onClick={handleWishlistToggle}
-                    className={`p-3 rounded-full ${
+                    disabled={addingToWishlist}
+                    className={`p-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                       isWishlisted
                         ? "bg-red-100 text-red-500"
-                        : "bg-gray-100 text-gray-400"
+                        : "bg-gray-100 text-gray-400 hover:bg-gray-200"
                     }`}
                   >
-                    <Heart
-                      className={`w-6 h-6 ${
-                        isWishlisted ? "fill-current" : ""
-                      }`}
-                    />
+                    {addingToWishlist ? (
+                      <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <Heart
+                        className={`w-6 h-6 ${
+                          isWishlisted ? "fill-current" : ""
+                        }`}
+                      />
+                    )}
                   </button>
                 </div>
 
@@ -437,10 +475,7 @@ const ProductDetailPage = () => {
                 <h3 className="font-semibold text-lg mb-4">
                   Meet the Artisan
                 </h3>
-                <Link
-                  to={`/artisan/${productWithDefaults.artisan.id}`}
-                  className="flex items-center space-x-4"
-                >
+                <div className="flex items-center space-x-4 mb-4">
                   <img
                     src={productWithDefaults.artisan.avatar}
                     alt={productWithDefaults.artisan.name}
@@ -454,7 +489,14 @@ const ProductDetailPage = () => {
                       {productWithDefaults.artisan.location}
                     </p>
                   </div>
-                </Link>
+                </div>
+                <button
+                  onClick={() => navigate(`/artisan/${productWithDefaults.artisan.id}`)}
+                  className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                >
+                  <User className="w-5 h-5" />
+                  <span>Meet Artisan</span>
+                </button>
               </div>
             </div>
           </div>
@@ -498,9 +540,17 @@ const ProductDetailPage = () => {
                 </h2>
                 <button
                   onClick={handleWriteReview}
-                  className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors"
+                  disabled={submittingReview}
+                  className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                 >
-                  Write a Review
+                  {submittingReview ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <span>Write a Review</span>
+                  )}
                 </button>
               </div>
 
@@ -551,7 +601,6 @@ const ProductDetailPage = () => {
 
           {/* Related Products */}
           <div className="mt-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-8">You Might Also Like</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {productWithDefaults.relatedProducts.map((relatedProduct) => (
                 <Link
