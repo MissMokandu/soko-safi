@@ -29,7 +29,7 @@ const apiRequest = async (endpoint, options = {}) => {
         ...(token && { Authorization: `Bearer ${token}` }),
         ...options.headers,
       },
-      credentials: "same-origin", // Prevent CSRF attacks
+      credentials: "include", // Include cookies for cross-origin requests
       ...options,
     };
 
