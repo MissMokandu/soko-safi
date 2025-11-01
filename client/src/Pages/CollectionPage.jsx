@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { Diamond, Heart, Trash2, ShoppingCart, Share2 } from "lucide-react";
 import Navbar from "../Components/Layout/Navbar";
 import Footer from "../Components/Layout/Footer";
+import { getProductLink, getExploreLink } from "../utils/navigation";
 
 const CollectionPage = () => {
   const { id } = useParams();
@@ -101,7 +102,7 @@ const CollectionPage = () => {
               </h2>
               <p className="text-gray-600 mb-6">Start adding items you love!</p>
               <Link
-                to="/explore"
+                to={getExploreLink()}
                 className="btn-primary inline-block px-6 py-3"
               >
                 Explore Products
@@ -115,7 +116,7 @@ const CollectionPage = () => {
                   className="bg-white rounded-xl shadow-sm overflow-hidden group"
                 >
                   <div className="relative aspect-square overflow-hidden">
-                    <Link to={`/product/${item.id}`}>
+                    <Link to={getProductLink(item.id)}>
                       <img
                         src={item.image}
                         alt={item.title}
@@ -139,7 +140,7 @@ const CollectionPage = () => {
                   </div>
                   <div className="p-4">
                     <Link
-                      to={`/product/${item.id}`}
+                      to={getProductLink(item.id)}
                       className="text-lg font-bold text-gray-900 hover:text-primary mb-1 block"
                     >
                       {item.title}

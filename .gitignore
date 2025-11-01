@@ -27,12 +27,15 @@ server/*.egg-info/
 server/.venv/
 server/venv/
 server/soko_env/
+Pipfile
+Pipfile.lock
 
 # Project Documentation
 summary.md
 *.summary.md
 
 # Client
+node_modules/
 client/node_modules/
 client/dist/
 client/dist-ssr/

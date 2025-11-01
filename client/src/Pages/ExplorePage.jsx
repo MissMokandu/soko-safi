@@ -5,7 +5,9 @@ import Navbar from '../Components/Layout/Navbar'
 import Footer from '../Components/Layout/Footer'
 import LazyImage from '../Components/LazyImage'
 import LoadingSpinner from '../Components/LoadingSpinner'
+import ArtisanLink from '../Components/ArtisanLink'
 import { api } from '../services/api'
+import { getProductLink } from '../utils/navigation'
 
 const ExplorePage = () => {
   const [viewMode, setViewMode] = useState('grid')
@@ -209,7 +211,7 @@ const ExplorePage = () => {
             {sortedWorks.map((work) => (
               <Link
                 key={work.id}
-                to={`/product/${work.id}`}
+                to={getProductLink(work.id)}
                 className={`group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden ${
                   viewMode === "list" ? "flex" : ""
                 }`}
@@ -237,7 +239,13 @@ const ExplorePage = () => {
                     <MapPin className="w-3 h-3" />
                     <span>{work.location || "Kenya"}</span>
                     <span>•</span>
-                    <span>by {work.artisan || "Unknown"}</span>
+                    <span>by </span>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <ArtisanLink 
+                        artisanId={work.artisan_id}
+                        artisanName={work.artisan_name || work.artisan}
+                      />
+                    </div>
                   </div>
 
                   <p className="text-gray-600 text-sm mb-4 line-clamp-2">

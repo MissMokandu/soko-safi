@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { api } from '../services/api';
+import { tokenManager } from '../utils/tokenManager';
+import { secureStorage } from '../utils/secureStorage';
 
 const AuthContext = createContext(null);
 
@@ -13,26 +15,53 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const checkAuth = async () => {
-    try {
-      console.log('[AuthContext] Starting auth check...');
-      setError(null);
-      const data = await api.auth.getSession();
-      console.log('[AuthContext] Session response:', data);
-      
-      // Handle different response formats from backend
-      if (data && data.authenticated && data.user) {
-        setUser(data.user);
-        console.log('[AuthContext] User authenticated:', data.user);
-      } else {
-        setUser(null);
-        console.log('[AuthContext] User not authenticated, session data:', data);
-      }
-    } catch (error) {
-      console.warn('[AuthContext] Auth check failed:', error.message);
+    console.log('[AuthContext] Starting auth check...');
+    setError(null);
+    
+    // Check token validity
+    if (tokenManager.isTokenExpired()) {
+      console.log('[AuthContext] Token expired');
+      tokenManager.removeToken();
       setUser(null);
-      // Don't set error for session check failures
-    } finally {
-      console.log('[AuthContext] Auth check complete, loading set to false');
+      setLoading(false);
+      return;
+    }
+    
+    const token = tokenManager.getToken();
+    const storedUser = localStorage.getItem('user');
+    
+    if (!token || !storedUser) {
+      console.log('[AuthContext] No valid token or user found');
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+    
+    // Load user from storage
+    try {
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+      setLoading(false);
+      console.log('[AuthContext] User authenticated from storage');
+      
+      // Background token refresh if stale
+      if (tokenManager.isTokenStale()) {
+        api.auth.getSession().then(data => {
+          if (data?.authenticated && data?.user) {
+            setUser(data.user);
+            localStorage.setItem('user', JSON.stringify(data.user));
+          }
+        }).catch(error => {
+          if (error.status === 401) {
+            logout();
+          }
+        });
+      }
+      
+    } catch (e) {
+      console.warn('[AuthContext] Invalid user data');
+      tokenManager.removeToken();
+      setUser(null);
       setLoading(false);
     }
   };
@@ -44,14 +73,16 @@ export const AuthProvider = ({ children }) => {
       const data = await api.auth.login(credentials);
       console.log('Login response:', data);
       
-      // Handle different response formats from backend
-      if (data && data.user) {
+      // Store token and user data
+      if (data.token) {
+        secureStorage.setToken(data.token);
+        tokenManager.setToken(data.token);
+      }
+      
+      if (data.user) {
         setUser(data.user);
-        console.log('User logged in:', data.user);
-      } else {
-        // After login, check session to get user data
-        console.log('Login successful, checking session...');
-        await checkAuth();
+        localStorage.setItem('user', JSON.stringify(data.user));
+        console.log('User logged in and stored:', data.user);
       }
       
       return data;
@@ -70,14 +101,15 @@ export const AuthProvider = ({ children }) => {
       const data = await api.auth.register(userData);
       console.log('Registration response:', data);
       
-      // Handle different response formats from backend
-      if (data && data.user) {
+      // Store token and user data
+      if (data.token) {
+        tokenManager.setToken(data.token);
+      }
+      
+      if (data.user) {
         setUser(data.user);
-        console.log('User registered and set:', data.user);
-      } else {
-        // After registration, check session to get user data
-        console.log('Registration successful, checking session...');
-        await checkAuth();
+        localStorage.setItem('user', JSON.stringify(data.user));
+        console.log('User registered and stored:', data.user);
       }
       
       return data;
@@ -97,6 +129,8 @@ export const AuthProvider = ({ children }) => {
       console.warn('Logout error:', error.message);
     } finally {
       setUser(null);
+      secureStorage.clear();
+      tokenManager.removeToken();
     }
   };
 
@@ -106,12 +140,18 @@ export const AuthProvider = ({ children }) => {
       const data = await api.auth.updateProfile(profileData);
       if (data.user) {
         setUser(data.user);
+        localStorage.setItem('user', JSON.stringify(data.user));
       }
       return data;
     } catch (error) {
       setError(error.message);
       throw error;
     }
+  };
+
+  const updateUser = (userData) => {
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const clearError = () => setError(null);
@@ -124,6 +164,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateProfile,
+    updateUser,
     checkAuth,
     clearError,
     isAuthenticated: !!user,
@@ -152,11 +193,8 @@ export const withAuth = (Component, requiredRole = null) => {
     const { user, loading } = useAuth();
     
     if (loading) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
-        </div>
-      );
+      // Show component with loading state instead of full-screen spinner
+      return <Component {...props} authLoading={true} />;
     }
     
     if (!user) {

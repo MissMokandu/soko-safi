@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Diamond, ShoppingCart, MessageSquare, User, Menu, X, Search, Heart, LogOut } from 'lucide-react'
+import { Diamond, ShoppingCart, MessageSquare, User, Menu, X, Heart, LogOut } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useCart } from '../../hooks/useCart.jsx'
+import { getExploreLink } from '../../utils/navigation'
 
 const Navbar = ({ showAuthButtons = true }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -27,13 +28,12 @@ const Navbar = ({ showAuthButtons = true }) => {
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link to="/" className="flex items-center space-x-2 group">
+          <div className="flex items-center space-x-2">
             <div className="relative">
-              <Diamond className="w-8 h-8 text-primary-600 group-hover:scale-110 transition-transform duration-300" fill="currentColor" />
-              <div className="absolute inset-0 bg-primary-600/20 rounded-full scale-0 group-hover:scale-100 transition-transform duration-300"></div>
+              <Diamond className="w-8 h-8 text-primary-600" fill="currentColor" />
             </div>
-            <span className="text-2xl font-bold text-gray-900 group-hover:text-primary-600 transition-colors">SokoDigital</span>
-          </Link>
+            <span className="text-2xl font-bold text-gray-900">SokoDigital</span>
+          </div>
 
           <div className="hidden lg:flex items-center space-x-8">
             <Link
@@ -45,9 +45,9 @@ const Navbar = ({ showAuthButtons = true }) => {
               Home
             </Link>
             <Link
-              to="/explore"
+              to={getExploreLink()}
               className={`font-medium transition-colors duration-200 ${
-                isActive('/explore') ? 'text-primary-600' : 'text-gray-700 hover:text-primary-600'
+                isActive('/explore') || isActive('/buyer-dashboard') ? 'text-primary-600' : 'text-gray-700 hover:text-primary-600'
               }`}
             >
               Explore
@@ -63,10 +63,6 @@ const Navbar = ({ showAuthButtons = true }) => {
           </div>
 
           <div className="flex items-center space-x-3">
-            {/* Search Button */}
-            <button className="hidden md:flex items-center justify-center w-10 h-10 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors">
-              <Search className="w-5 h-5" />
-            </button>
 
             {/* Desktop Auth Buttons */}
             {showAuthButtons && !user && (
@@ -86,32 +82,6 @@ const Navbar = ({ showAuthButtons = true }) => {
             {/* Desktop User Menu */}
             {user && (
               <div className="hidden lg:flex items-center space-x-2">
-                <Link
-                  to="/messages"
-                  className="relative p-2.5 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors group"
-                >
-                  <MessageSquare className="w-5 h-5" />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></div>
-                </Link>
-                <Link
-                  to="/favorites"
-                  className="p-2.5 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors"
-                >
-                  <Heart className="w-5 h-5" />
-                </Link>
-                <Link
-                  to="/cart"
-                  className="relative p-2.5 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors group"
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                  {cartCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary-600 text-white text-xs rounded-full flex items-center justify-center font-semibold animate-bounce">
-                      {cartCount > 99 ? '99+' : cartCount}
-                    </span>
-                  )}
-                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-primary-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></div>
-                </Link>
                 <div className="relative group">
                   <button className="flex items-center space-x-2 p-1.5 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors">
                     {user?.profile_picture_url ? (
@@ -136,7 +106,7 @@ const Navbar = ({ showAuthButtons = true }) => {
                         to="/profile"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
-                        Profile Settings
+                        Profile
                       </Link>
                       <button
                         onClick={logout}
@@ -176,9 +146,9 @@ const Navbar = ({ showAuthButtons = true }) => {
               Home
             </Link>
             <Link
-              to="/explore"
+              to={getExploreLink()}
               className={`block px-3 py-3 rounded-lg font-medium transition-colors ${
-                isActive('/explore') ? 'text-primary-600 bg-primary-50' : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                isActive('/explore') || isActive('/buyer-dashboard') ? 'text-primary-600 bg-primary-50' : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
               }`}
               onClick={() => setMobileMenuOpen(false)}
             >

@@ -6,6 +6,7 @@ import ProtectedRoute from "./Components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./hooks/useCart.jsx";
 import { quickHealthCheck } from "./utils/apiTest";
+import { showDebugPanel } from "./utils/debugPanel";
 
 // Lazy load components for better performance
 const Navbar = lazy(() => import("./Components/Layout/Navbar"));
@@ -17,13 +18,15 @@ const RegisterPage = lazy(() => import("./Pages/RegisterPage"));
 const ResetPasswordPage = lazy(() => import("./Pages/ResetPasswordPage"));
 const ExplorePage = lazy(() => import("./Pages/ExplorePage"));
 const ProductDetailPage = lazy(() => import("./Pages/ProductDetailPage"));
+const ProductPage = lazy(() => import("./Pages/ProductPage"));
 const CartPage = lazy(() => import("./Pages/CartPage"));
 const CheckoutPage = lazy(() => import("./Pages/CheckoutPage"));
 const CollectionPage = lazy(() => import("./Pages/CollectionPage"));
-const MessagesPage = lazy(() => import("./Pages/MessagesPage"));
+const MessagesPageRefactored = lazy(() => import("./Pages/MessagesPageRefactored"));
 const BuyerDashboard = lazy(() => import("./Pages/BuyerDashboard"));
 const ArtisanDashboard = lazy(() => import("./Pages/ArtisanDashboard"));
 const ArtisanProfilePage = lazy(() => import("./Pages/ArtisanProfilePage"));
+const ProfilePage = lazy(() => import("./Pages/ProfilePage"));
 
 // Loading spinner for Suspense fallback
 const PageLoader = () => (
@@ -71,6 +74,7 @@ function App() {
     if (import.meta.env.VITE_APP_ENV === "development") {
       setTimeout(() => {
         quickHealthCheck();
+        showDebugPanel();
       }, 2000);
     }
   }, []);
@@ -135,7 +139,7 @@ function App() {
                     path="/product/:id"
                     element={
                       <ErrorBoundary>
-                        <ProductDetailPage />
+                        <ProductPage />
                       </ErrorBoundary>
                     }
                   />
@@ -176,21 +180,21 @@ function App() {
                     }
                   />
                   <Route
-                    path="/messages"
+                    path="/messages-new"
                     element={
                       <ErrorBoundary>
                         <ProtectedRoute>
-                          <MessagesPage />
+                          <MessagesPageRefactored />
                         </ProtectedRoute>
                       </ErrorBoundary>
                     }
                   />
                   <Route
-                    path="/messages/:id"
+                    path="/messages-new/:id"
                     element={
                       <ErrorBoundary>
                         <ProtectedRoute>
-                          <MessagesPage />
+                          <BuyerDashboard />
                         </ProtectedRoute>
                       </ErrorBoundary>
                     }
@@ -228,6 +232,16 @@ function App() {
                     element={
                       <ErrorBoundary>
                         <ArtisanProfilePage />
+                      </ErrorBoundary>
+                    }
+                  />
+                  <Route
+                    path="/profile"
+                    element={
+                      <ErrorBoundary>
+                        <ProtectedRoute>
+                          <ProfilePage />
+                        </ProtectedRoute>
                       </ErrorBoundary>
                     }
                   />

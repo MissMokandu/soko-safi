@@ -1,18 +1,21 @@
 import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { Star, MapPin, MessageSquare, Award, Package, Camera, Edit } from "lucide-react";
-import Navbar from "../Components/Layout/Navbar";
-import Footer from "../Components/Layout/Footer";
+import BuyerLayout from "./Buyer/BuyerLayout";
 import { api } from '../services/api';
 import { uploadToCloudinary } from '../services/cloudinary';
 import { useAuth } from '../context/AuthContext';
 
 const ArtisanProfilePage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("products");
+  const [sidebarTab, setSidebarTab] = useState("explore");
   const [artisan, setArtisan] = useState(null);
   const [products, setProducts] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -24,6 +27,11 @@ const ArtisanProfilePage = () => {
 
   const isOwner = user && user.id === id;
 
+  const handleSidebarClick = (tab) => {
+    setSidebarTab(tab);
+    navigate('/buyer-dashboard');
+  };
+
   useEffect(() => {
     fetchArtisanData();
   }, [id]);
@@ -31,12 +39,16 @@ const ArtisanProfilePage = () => {
   const fetchArtisanData = async () => {
     try {
       setLoading(true);
-      const [artisanData, productsData] = await Promise.all([
-        api.users.getById(id),
-        api.artisan.getProducts(id)
+      const [artisanData, productsData, statsData, reviewsData] = await Promise.all([
+        api.artisan.getProfile(id),
+        api.artisan.getProducts(id),
+        api.artisan.getStats(id),
+        api.artisan.getReviews(id)
       ]);
       setArtisan(artisanData);
       setProducts(productsData);
+      setStats(statsData);
+      setReviews(reviewsData);
       setEditData({
         bio: artisanData.description || '',
         location: artisanData.location || '',
@@ -57,7 +69,7 @@ const ArtisanProfilePage = () => {
         const imageUrl = await uploadToCloudinary(file);
         setEditData(prev => ({ ...prev, avatar: imageUrl }));
         // Auto-save avatar
-        await api.users.update(id, { profile_picture_url: imageUrl });
+        await api.profile.update({ profile_picture_url: imageUrl });
         setArtisan(prev => ({ ...prev, profile_picture_url: imageUrl }));
       } catch (error) {
         console.error('Failed to upload avatar:', error);
@@ -70,7 +82,7 @@ const ArtisanProfilePage = () => {
 
   const handleSaveProfile = async () => {
     try {
-      await api.users.update(id, {
+      await api.profile.update({
         description: editData.bio,
         location: editData.location
       });
@@ -112,110 +124,21 @@ const ArtisanProfilePage = () => {
     );
   }
 
-  // Use real data instead of mock
-  const mockArtisan = {
-    id: id,
-    name: "Sarah Johnson",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop",
-    coverImage:
-      "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=1200&h=400&fit=crop",
-    location: "Portland, Oregon",
-    memberSince: "2023",
-    rating: 4.8,
-    totalReviews: 124,
-    totalSales: 450,
-    bio: "Passionate ceramic artist specializing in handcrafted pottery and decorative pieces. I draw inspiration from nature and traditional techniques passed down through generations. Each piece is unique and made with love and attention to detail.",
-    specialties: ["Ceramics", "Pottery", "Sculpture"],
-    products: [
-      {
-        id: 1,
-        title: "Ceramic Vase",
-        price: 45.0,
-        image:
-          "https://images.unsplash.com/photo-1578500494198-246f612d3b3d?w=400&h=400&fit=crop",
-        sales: 45,
-      },
-      {
-        id: 2,
-        title: "Pottery Bowl",
-        price: 38.0,
-        image:
-          "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=400&h=400&fit=crop",
-        sales: 32,
-      },
-      {
-        id: 3,
-        title: "Decorative Plate",
-        price: 52.0,
-        image:
-          "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&h=400&fit=crop",
-        sales: 28,
-      },
-      {
-        id: 4,
-        title: "Tea Set",
-        price: 95.0,
-        image:
-          "https://images.unsplash.com/photo-1578500494198-246f612d3b3d?w=400&h=400&fit=crop",
-        sales: 18,
-      },
-    ],
-    reviews: [
-      {
-        id: 1,
-        user: "John Doe",
-        rating: 5,
-        comment:
-          "Amazing craftsmanship! The attention to detail is incredible. Highly recommend!",
-        date: "2 weeks ago",
-        product: "Ceramic Vase",
-      },
-      {
-        id: 2,
-        user: "Jane Smith",
-        rating: 5,
-        comment:
-          "Beautiful work and excellent communication. Will definitely order again.",
-        date: "1 month ago",
-        product: "Pottery Bowl",
-      },
-      {
-        id: 3,
-        user: "Mike Wilson",
-        rating: 4,
-        comment:
-          "Great quality pieces. Shipping was a bit slow but worth the wait.",
-        date: "1 month ago",
-        product: "Decorative Plate",
-      },
-      {
-        id: 4,
-        user: "Emily Davis",
-        rating: 5,
-        comment: "Absolutely stunning! Exceeded my expectations. Thank you!",
-        date: "2 months ago",
-        product: "Tea Set",
-      },
-    ],
-  };
+
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
+    <BuyerLayout activeTab={sidebarTab} setActiveTab={handleSidebarClick}>
+      <div className="max-w-7xl mx-auto">
+            {/* Cover Image */}
+            <div
+              className="h-48 bg-cover bg-center relative rounded-2xl mb-6"
+              style={{ backgroundImage: `url(${artisan.banner_image_url || 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=1200&h=400&fit=crop'})` }}
+            >
+              <div className="absolute inset-0 bg-black/30 rounded-2xl"></div>
+            </div>
 
-      <main className="flex-1">
-        {/* Cover Image */}
-        <div
-          className="h-64 bg-cover bg-center relative"
-          style={{ backgroundImage: `url(${artisan.coverImage})` }}
-        >
-          <div className="absolute inset-0 bg-black/30"></div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Profile Header */}
-          <div className="relative -mt-20 mb-8">
+            {/* Profile Header */}
+            <div className="relative -mt-12 mb-8">
             <div className="bg-white rounded-2xl shadow-sm p-8">
               <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
                 <div className="relative">
@@ -256,31 +179,33 @@ const ArtisanProfilePage = () => {
                       <span>Member since {new Date(artisan.created_at).getFullYear()}</span>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-6 mb-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="flex">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-5 h-5 ${
-                              i < Math.floor(4.5)
-                                ? "text-yellow-400 fill-current"
-                                : "text-gray-300"
-                            }`}
-                          />
-                        ))}
+                  {stats && (
+                    <div className="flex items-center space-x-6 mb-4">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-5 h-5 ${
+                                i < Math.floor(stats.avg_rating)
+                                  ? "text-yellow-400 fill-current"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="font-medium">{stats.avg_rating}</span>
+                        <span className="text-gray-600">
+                          ({stats.review_count} reviews)
+                        </span>
                       </div>
-                      <span className="font-medium">4.5</span>
-                      <span className="text-gray-600">
-                        (0 reviews)
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <Package className="w-5 h-5 text-gray-600" />
+                        <span className="font-medium">{stats.total_sales}</span>
+                        <span className="text-gray-600">sales</span>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Package className="w-5 h-5 text-gray-600" />
-                      <span className="font-medium">{products.length}</span>
-                      <span className="text-gray-600">sales</span>
-                    </div>
-                  </div>
+                  )}
                   <div className="flex flex-wrap gap-2 mb-4">
                     <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
                       Artisan
@@ -298,7 +223,7 @@ const ArtisanProfilePage = () => {
                     </button>
                   ) : (
                     <Link
-                      to={`/messages/${artisan.id}`}
+                      to={`/messages-new/${artisan.id}`}
                       className="btn-primary px-6 py-3 flex items-center space-x-2"
                     >
                       <MessageSquare className="w-5 h-5" />
@@ -371,7 +296,7 @@ const ArtisanProfilePage = () => {
                       : "border-transparent text-gray-600 hover:text-gray-900"
                   }`}
                 >
-                  Reviews (0)
+                  Reviews ({stats?.review_count || 0})
                 </button>
               </div>
             </div>
@@ -400,10 +325,12 @@ const ArtisanProfilePage = () => {
                           </h3>
                           <div className="flex items-center justify-between">
                             <span className="text-lg font-bold text-gray-900">
-                              KSH {product.price.toFixed(2)}
+                              KSH {typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
                             </span>
-                            <span className="text-sm text-gray-600">
-                              In Stock
+                            <span className={`text-sm font-medium ${
+                              product.stock > 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {product.stock > 0 ? `${product.stock} left` : 'Out of Stock'}
                             </span>
                           </div>
                         </div>
@@ -415,21 +342,54 @@ const ArtisanProfilePage = () => {
 
               {/* Reviews Tab */}
               {activeTab === "reviews" && (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Star className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Reviews Yet</h3>
-                  <p className="text-gray-600">This artisan hasn't received any reviews yet.</p>
+                <div>
+                  {reviews.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Star className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No Reviews Yet</h3>
+                      <p className="text-gray-600">This artisan hasn't received any reviews yet.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {reviews.map((review) => (
+                        <div key={review.id} className="border-b border-gray-100 pb-6 last:border-0">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <div className="flex items-center space-x-2 mb-1">
+                                <span className="font-semibold text-gray-900">{review.user_name}</span>
+                                <div className="flex">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`w-4 h-4 ${
+                                        i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                              <p className="text-sm text-gray-600">for {review.product_title}</p>
+                            </div>
+                            <span className="text-sm text-gray-500">
+                              {new Date(review.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                          {review.title && (
+                            <h4 className="font-medium text-gray-900 mb-2">{review.title}</h4>
+                          )}
+                          <p className="text-gray-700">{review.body}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </div>
-        </div>
-      </main>
-
-      <Footer />
-    </div>
+      </div>
+    </BuyerLayout>
   );
 };
 
