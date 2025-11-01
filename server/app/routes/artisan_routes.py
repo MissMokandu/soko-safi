@@ -296,6 +296,89 @@ class ArtisanProfileResource(Resource):
         except Exception as e:
             return {'error': 'Failed to fetch artisan profile'}, 500
 
+class ArtisanStatsResource(Resource):
+    def get(self, artisan_id):
+        """Get artisan statistics - Public access"""
+        try:
+            from app.models.review import Review
+            from app.models.order import Order, OrderItem
+            from sqlalchemy import func
+            
+            # Get products by artisan
+            products = Product.query.filter_by(artisan_id=artisan_id, status='active').all()
+            product_ids = [p.id for p in products]
+            
+            # Calculate average rating and review count
+            if product_ids:
+                rating_data = db.session.query(
+                    func.avg(Review.rating).label('avg_rating'),
+                    func.count(Review.id).label('review_count')
+                ).filter(Review.product_id.in_(product_ids)).first()
+                
+                avg_rating = float(rating_data.avg_rating) if rating_data.avg_rating else 0
+                review_count = rating_data.review_count or 0
+                
+                # Calculate total sales from completed orders
+                sales_count = db.session.query(func.sum(OrderItem.quantity)).filter(
+                    OrderItem.artisan_id == artisan_id,
+                    OrderItem.order_id.in_(
+                        db.session.query(Order.id).filter(Order.status == 'completed')
+                    )
+                ).scalar() or 0
+            else:
+                avg_rating = 0
+                review_count = 0
+                sales_count = 0
+            
+            return {
+                'product_count': len(products),
+                'avg_rating': round(avg_rating, 1),
+                'review_count': review_count,
+                'total_sales': sales_count
+            }, 200
+        except Exception as e:
+            return {
+                'product_count': 0,
+                'avg_rating': 0,
+                'review_count': 0,
+                'total_sales': 0
+            }, 200
+
+class ArtisanReviewsResource(Resource):
+    def get(self, artisan_id):
+        """Get reviews for artisan's products - Public access"""
+        try:
+            from app.models.review import Review
+            
+            # Get products by artisan
+            products = Product.query.filter_by(artisan_id=artisan_id, status='active').all()
+            product_ids = [p.id for p in products]
+            
+            if not product_ids:
+                return [], 200
+            
+            # Get reviews for artisan's products
+            reviews = db.session.query(Review, User, Product).join(
+                User, Review.user_id == User.id
+            ).join(
+                Product, Review.product_id == Product.id
+            ).filter(
+                Review.product_id.in_(product_ids)
+            ).order_by(Review.created_at.desc()).all()
+            
+            return [{
+                'id': review.Review.id,
+                'rating': review.Review.rating,
+                'title': review.Review.title,
+                'body': review.Review.body,
+                'created_at': review.Review.created_at.isoformat() if review.Review.created_at else None,
+                'user_name': review.User.full_name,
+                'product_title': review.Product.title,
+                'product_id': review.Product.id
+            } for review in reviews], 200
+        except Exception as e:
+            return [], 200
+
 class ArtisanProductsResource(Resource):
     def get(self, artisan_id):
         """Get products by artisan ID"""
@@ -326,3 +409,5 @@ artisan_api.add_resource(ArtisanOrdersResource, '/orders')
 artisan_api.add_resource(ArtisanMessagesResource, '/messages')
 artisan_api.add_resource(ArtisanProfileResource, '/<artisan_id>')
 artisan_api.add_resource(ArtisanProductsResource, '/<artisan_id>/products')
+artisan_api.add_resource(ArtisanStatsResource, '/<artisan_id>/stats')
+artisan_api.add_resource(ArtisanReviewsResource, '/<artisan_id>/reviews')

@@ -491,6 +491,26 @@ export const api = {
         throw new Error("Artisan profile not found");
       }
     },
+    getStats: async (id) => {
+      try {
+        return await apiRequest(`/artisan/${id}/stats`);
+      } catch (error) {
+        return {
+          product_count: 0,
+          avg_rating: 0,
+          review_count: 0,
+          total_sales: 0
+        };
+      }
+    },
+    getReviews: async (id) => {
+      try {
+        const reviews = await apiRequest(`/artisan/${id}/reviews`);
+        return Array.isArray(reviews) ? reviews : [];
+      } catch (error) {
+        return [];
+      }
+    },
     getProducts: async (id) => {
       try {
         const products = await apiRequest(`/artisan/${id}/products`);
