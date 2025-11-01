@@ -3,6 +3,7 @@ from flask import Blueprint, request, session
 from app.models.product import Product
 from app.models import db
 
+product_bp = Blueprint('product_bp', __name__)
 product_api = Api(product_bp)
 
 class ProductListResource(Resource):
