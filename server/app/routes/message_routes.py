@@ -220,6 +220,8 @@ class MessageConversationsResource(Resource):
                 # Get user avatar from profile or generate one
                 avatar_url = partner.profile_picture_url if hasattr(partner, 'profile_picture_url') and partner.profile_picture_url else f'https://ui-avatars.com/api/?name={partner.full_name or "User"}&background=6366f1&color=fff'
                 
+                print(f"[BACKEND_CONVERSATIONS] Message timestamp: {msg.created_at}, type: {type(msg.created_at)}")
+                
                 conversations.append({
                     'id': partner_id,
                     'artisan': {
@@ -229,9 +231,13 @@ class MessageConversationsResource(Resource):
                         'online': False  # TODO: Implement online status
                     },
                     'lastMessage': msg.message_text,
-                    'lastMessageTime': msg.created_at.strftime('%H:%M') if msg.created_at else '',
+                    'lastMessageTime': msg.created_at.isoformat() if msg.created_at else '',
+                    'timestamp': msg.created_at.isoformat() if msg.created_at else '',
+                    'created_at': msg.created_at.isoformat() if msg.created_at else '',
                     'unread': unread_count
                 })
+                
+                print(f"[BACKEND_CONVERSATIONS] Added conversation: {conversations[-1]}")
 
         return conversations
 
@@ -265,17 +271,23 @@ class ConversationMessagesResource(Resource):
 
         formatted_messages = []
         for msg in messages:
+            print(f"[BACKEND_MESSAGES] Message timestamp: {msg.created_at}, type: {type(msg.created_at)}")
+            
             formatted_messages.append({
                 'id': msg.id,
                 'sender': 'buyer' if msg.sender_id == current_user_id else 'artisan',
                 'text': msg.message_text,
                 'time': msg.created_at.strftime('%H:%M') if msg.created_at else '',
+                'timestamp': msg.created_at.isoformat() if msg.created_at else '',
+                'created_at': msg.created_at.isoformat() if msg.created_at else '',
                 'message_type': 'text',
                 'attachment_url': msg.media_url,
                 'attachment_name': None,
                 'status': msg.status or 'sent',
                 'is_read': msg.is_read
             })
+            
+            print(f"[BACKEND_MESSAGES] Added message: {formatted_messages[-1]}")
 
         return formatted_messages
 
@@ -345,7 +357,9 @@ class ConversationInitResource(Resource):
                         'online': False
                     },
                     'lastMessage': existing_message.message_text,
-                    'lastMessageTime': existing_message.created_at.strftime('%H:%M') if existing_message.created_at else '',
+                    'lastMessageTime': existing_message.created_at.isoformat() if existing_message.created_at else '',
+                    'timestamp': existing_message.created_at.isoformat() if existing_message.created_at else '',
+                    'created_at': existing_message.created_at.isoformat() if existing_message.created_at else '',
                     'unread': 0
                 }
             }, 200
@@ -364,6 +378,8 @@ class ConversationInitResource(Resource):
                 },
                 'lastMessage': 'Start a conversation...',
                 'lastMessageTime': '',
+                'timestamp': '',
+                'created_at': '',
                 'unread': 0
             }
         }, 201
