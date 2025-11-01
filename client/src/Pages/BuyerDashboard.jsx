@@ -35,12 +35,6 @@ const BuyerDashboard = ({ authLoading = false }) => {
   const artisanIdFromRoute = window.location.pathname.startsWith('/messages-new/') 
     ? window.location.pathname.split('/messages-new/')[1] 
     : null;
-  
-    pathname: window.location.pathname,
-    artisanIdFromRoute,
-    activeTab,
-    searchParams: Object.fromEntries(searchParams)
-  });
   const [reviewModal, setReviewModal] = useState({
     isOpen: false,
     product: null,
@@ -139,12 +133,6 @@ const BuyerDashboard = ({ authLoading = false }) => {
       const paymentsData =
         results[3].status === "fulfilled" ? results[3].value : [];
 
-        ordersData,
-        messagesData,
-        collectionsData,
-        paymentsData,
-      });
-
       setOrders(ordersData || []);
       setMessages(messagesData || []);
       setCollections(collectionsData || []);
@@ -175,6 +163,7 @@ const BuyerDashboard = ({ authLoading = false }) => {
       // Check if any critical errors occurred
       const failedRequests = results.filter((r) => r.status === "rejected");
       if (failedRequests.length > 0) {
+        console.warn(
           "Some dashboard data failed to load:",
           failedRequests.map((r) => r.reason?.message)
         );
@@ -196,6 +185,7 @@ const BuyerDashboard = ({ authLoading = false }) => {
       if (error.message.includes("Please log in")) {
         setError("Please log in to view your dashboard.");
       } else {
+        console.warn(
           "Dashboard endpoints failed, showing empty state for new user"
         );
       }
@@ -215,6 +205,7 @@ const BuyerDashboard = ({ authLoading = false }) => {
       const productsArray = Array.isArray(productsResponse)
         ? productsResponse
         : [];
+      console.log(
         `[FRONTEND_PRODUCTS] Loaded ${productsArray.length} products in explore page`
       );
       setExploreProducts(productsArray);
@@ -331,6 +322,7 @@ const BuyerDashboard = ({ authLoading = false }) => {
         profile_picture_url: profileData.profile_picture_url || "",
       });
     } catch (error) {
+      console.error('Failed to load profile:', error);
     }
   };
 
