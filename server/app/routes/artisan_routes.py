@@ -274,6 +274,28 @@ class ArtisanMessagesResource(Resource):
             print(f"Messages error: {e}")
             return []
 
+class ArtisanProfileResource(Resource):
+    def get(self, artisan_id):
+        """Get artisan profile by ID - Public access"""
+        try:
+            artisan = User.query.filter_by(id=artisan_id, role='artisan').first()
+            if not artisan:
+                return {'error': 'Artisan not found'}, 404
+            
+            return {
+                'id': artisan.id,
+                'full_name': artisan.full_name,
+                'email': artisan.email,
+                'description': artisan.description,
+                'location': artisan.location,
+                'profile_picture_url': artisan.profile_picture_url,
+                'banner_image_url': artisan.banner_image_url,
+                'created_at': artisan.created_at.isoformat() if artisan.created_at else None,
+                'is_verified': artisan.is_verified
+            }, 200
+        except Exception as e:
+            return {'error': 'Failed to fetch artisan profile'}, 500
+
 class ArtisanProductsResource(Resource):
     def get(self, artisan_id):
         """Get products by artisan ID"""
@@ -292,22 +314,7 @@ class ArtisanProductsResource(Resource):
         except Exception:
             return [], 200
 
-@artisan_bp.route('/<artisan_id>/products', methods=['GET'])
-def get_artisan_products(artisan_id):
-    try:
-        products = Product.query.filter_by(artisan_id=artisan_id, status='active').all()
-        return jsonify([{
-            'id': p.id,
-            'title': p.title,
-            'price': p.price,
-            'description': p.description,
-            'image_url': p.image_url,
-            'status': p.status,
-            'stock': p.stock,
-            'currency': p.currency
-        } for p in products]), 200
-    except Exception:
-        return jsonify([]), 200
+
 
 # Register routes
 artisan_api.add_resource(ArtisanShowcaseMediaListResource, '/showcase/')
@@ -317,3 +324,5 @@ artisan_api.add_resource(ArtisanSocialResource, '/social/<social_link_id>')
 artisan_api.add_resource(ArtisanDashboardResource, '/dashboard')
 artisan_api.add_resource(ArtisanOrdersResource, '/orders')
 artisan_api.add_resource(ArtisanMessagesResource, '/messages')
+artisan_api.add_resource(ArtisanProfileResource, '/<artisan_id>')
+artisan_api.add_resource(ArtisanProductsResource, '/<artisan_id>/products')

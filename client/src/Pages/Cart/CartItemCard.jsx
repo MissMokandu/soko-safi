@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Trash2, Plus, Minus, Loader } from 'lucide-react'
+import ArtisanLink from '../../Components/ArtisanLink'
 
 const CartItemCard = ({ item, updating, onUpdateQuantity, onRemoveItem }) => {
   const calculatePrice = () => {
@@ -37,7 +38,10 @@ const CartItemCard = ({ item, updating, onUpdateQuantity, onRemoveItem }) => {
                 {item.product?.title || item.title}
               </Link>
               <p className="text-sm text-gray-600">
-                by {item.product?.artisan_name || item.artisan || "Unknown Artisan"}
+                by <ArtisanLink 
+                  artisanId={item.product?.artisan_id || item.artisan_id}
+                  artisanName={item.product?.artisan_name || item.artisan}
+                />
               </p>
             </div>
 

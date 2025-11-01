@@ -494,7 +494,7 @@ export const api = {
     getProducts: async (id) => {
       try {
         const products = await apiRequest(`/artisan/${id}/products`);
-        return Array.isArray(products) ? products : [];
+        return Array.isArray(products) ? products.map(enhanceProduct) : [];
       } catch (error) {
         console.warn("Artisan products failed:", error.message);
         return [];

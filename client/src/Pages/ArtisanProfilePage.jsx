@@ -32,7 +32,7 @@ const ArtisanProfilePage = () => {
     try {
       setLoading(true);
       const [artisanData, productsData] = await Promise.all([
-        api.users.getById(id),
+        api.artisan.getProfile(id),
         api.artisan.getProducts(id)
       ]);
       setArtisan(artisanData);
@@ -57,7 +57,7 @@ const ArtisanProfilePage = () => {
         const imageUrl = await uploadToCloudinary(file);
         setEditData(prev => ({ ...prev, avatar: imageUrl }));
         // Auto-save avatar
-        await api.users.update(id, { profile_picture_url: imageUrl });
+        await api.profile.update({ profile_picture_url: imageUrl });
         setArtisan(prev => ({ ...prev, profile_picture_url: imageUrl }));
       } catch (error) {
         console.error('Failed to upload avatar:', error);
@@ -70,7 +70,7 @@ const ArtisanProfilePage = () => {
 
   const handleSaveProfile = async () => {
     try {
-      await api.users.update(id, {
+      await api.profile.update({
         description: editData.bio,
         location: editData.location
       });
@@ -208,7 +208,7 @@ const ArtisanProfilePage = () => {
         {/* Cover Image */}
         <div
           className="h-64 bg-cover bg-center relative"
-          style={{ backgroundImage: `url(${artisan.coverImage})` }}
+          style={{ backgroundImage: `url(${artisan.banner_image_url || 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=1200&h=400&fit=crop'})` }}
         >
           <div className="absolute inset-0 bg-black/30"></div>
         </div>
@@ -400,10 +400,10 @@ const ArtisanProfilePage = () => {
                           </h3>
                           <div className="flex items-center justify-between">
                             <span className="text-lg font-bold text-gray-900">
-                              KSH {product.price.toFixed(2)}
+                              KSH {typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
                             </span>
                             <span className="text-sm text-gray-600">
-                              In Stock
+                              {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
                             </span>
                           </div>
                         </div>
