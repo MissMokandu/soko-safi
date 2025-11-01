@@ -8,7 +8,6 @@ from flask import Blueprint, request
 from app.models import db, User, UserRole, PaymentMethod
 from app.auth import require_auth, require_role, require_ownership_or_role
 
-user_bp = Blueprint('user_bp', __name__)
 user_api = Api(user_bp)
 
 class UserListResource(Resource):

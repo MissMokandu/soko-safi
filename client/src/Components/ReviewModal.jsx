@@ -10,7 +10,6 @@ const ReviewModal = ({ isOpen, onClose, product, onSubmit }) => {
     if (onSubmit) {
       onSubmit({ rating, review })
     } else {
-      console.log('Review submitted:', { rating, review, product })
     }
     onClose()
     setRating(0)

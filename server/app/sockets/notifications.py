@@ -26,7 +26,6 @@ def send_notification(user_id, notification_type, data):
         db.session.commit()
 
     except Exception as e:
-        print(f"Failed to send notification: {str(e)}")
 
 
 def get_notification_type_enum(notification_type):

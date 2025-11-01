@@ -14,5 +14,4 @@ try:
     # Connected users storage
     connected_users = {}
 except Exception as e:
-    print(f"Failed to initialize extensions: {e}")
     raise

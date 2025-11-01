@@ -9,7 +9,6 @@ const ResetPasswordPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault()
     // Handle password reset logic here
-    console.log('Reset password for:', email)
     setSubmitted(true)
   }
 

@@ -49,7 +49,6 @@ const HomePage = () => {
         const response = await api.products.getAll({ limit: 4, featured: true });
         setFeaturedWorks(Array.isArray(response) ? response.slice(0, 4) : []);
       } catch (error) {
-        console.error("Failed to fetch featured products:", error);
         setError("Failed to load featured products");
 
         // Fallback data if API fails

@@ -6,7 +6,6 @@ import os
 try:
     app = create_app()
 except Exception as e:
-    print(f"Failed to create app: {e}")
     exit(1)
 
 if __name__ == '__main__':
@@ -23,5 +22,4 @@ if __name__ == '__main__':
         
         socketio.run(app, debug=debug_mode, host=host, port=port, allow_unsafe_werkzeug=True)
     except Exception as e:
-        print(f"Failed to start server: {e}")
         exit(1)

@@ -3,14 +3,12 @@ from flask import Blueprint, request, session
 from app.models.product import Product
 from app.models import db
 
-product_bp = Blueprint('product_bp', __name__)
 product_api = Api(product_bp)
 
 class ProductListResource(Resource):
     def get(self):
         try:
             products = Product.query.filter_by(status='active').all()
-            print(f"Found {len(products)} products in database")
             return [{
                 'id': p.id,
                 'title': p.title,
@@ -23,7 +21,6 @@ class ProductListResource(Resource):
                 'artisan_id': p.artisan_id
             } for p in products]
         except Exception as e:
-            print(f"Error fetching products: {e}")
             return []
     
     def post(self):

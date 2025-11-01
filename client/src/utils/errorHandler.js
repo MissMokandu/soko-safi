@@ -12,7 +12,6 @@ export const logError = (error, context = '') => {
       token: !!localStorage.getItem('token')
     }
     
-    console.error(`[ERROR ${timestamp}] ${context}:`, errorInfo)
     
     // Store in localStorage for debugging (with error handling)
     try {
@@ -20,17 +19,14 @@ export const logError = (error, context = '') => {
       errors.push(errorInfo)
       localStorage.setItem('app_errors', JSON.stringify(errors.slice(-50)))
     } catch (storageError) {
-      console.warn('Failed to store error in localStorage:', storageError)
     }
   } catch (loggingError) {
-    console.error('Error in logError function:', loggingError)
   }
 }
 
 export const clearToken = () => {
   localStorage.removeItem('token')
   localStorage.removeItem('user')
-  console.log('[AUTH] Token cleared due to error')
 }
 
 export const handleAuthError = (error, context = '') => {
@@ -42,7 +38,6 @@ export const handleAuthError = (error, context = '') => {
       window.location.replace('/login')
     }
   } catch (handlingError) {
-    console.error('Error in handleAuthError:', handlingError)
     // Fallback: still try to redirect
     window.location.replace('/login')
   }

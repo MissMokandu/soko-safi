@@ -6,7 +6,6 @@ import ChatArea from '../../../Components/Messages/ChatArea'
 import { formatMessageTime } from '../../../utils/dateUtils'
 
 const MessagesTab = ({ messages, loading, authLoading, initialArtisanId }) => {
-  console.log('[MESSAGES_TAB] Rendered with props:', { 
     initialArtisanId, 
     messagesCount: messages?.length, 
     loading, 
@@ -16,7 +15,6 @@ const MessagesTab = ({ messages, loading, authLoading, initialArtisanId }) => {
   const [selectedConversationId, setSelectedConversationId] = useState(null)
   const [messageText, setMessageText] = useState('')
   
-  console.log('[MESSAGES_TAB] State:', { selectedConversationId, initialArtisanId })
   
   const {
     conversations,
@@ -34,7 +32,6 @@ const MessagesTab = ({ messages, loading, authLoading, initialArtisanId }) => {
     }
   }, [initialArtisanId, selectedConversationId])
   
-  console.log('[MESSAGES_TAB] useMessages result:', {
     conversationsCount: conversations?.length,
     chatMessagesCount: chatMessages?.length,
     selectedConversation,
@@ -51,8 +48,6 @@ const MessagesTab = ({ messages, loading, authLoading, initialArtisanId }) => {
   // Use initialArtisanId or selectedConversationId for display logic
   const activeConversationId = selectedConversation || initialArtisanId || selectedConversationId
   
-  console.log('[MESSAGES_TAB] Active conversation ID:', activeConversationId)
-  console.log('[MESSAGES_TAB] Current conversation:', currentConversation)
 
   const handleSendMessage = async (e) => {
     e.preventDefault()
@@ -115,7 +110,6 @@ const MessagesTab = ({ messages, loading, authLoading, initialArtisanId }) => {
                 ) : (
                   <div>
                     {messages.map((message, index) => {
-                      console.log('[BUYER_MESSAGES] Message data:', message)
                       return (
                       <button
                         key={message.id}

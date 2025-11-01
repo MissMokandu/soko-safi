@@ -34,7 +34,6 @@ const ProductDetailPage = () => {
         const productData = await api.products.getById(id);
         setProduct(productData);
       } catch (error) {
-        console.error("Failed to fetch product:", error);
         setError("Product not found");
       } finally {
         setLoading(false);
@@ -122,15 +121,11 @@ const ProductDetailPage = () => {
         throw new Error('Product ID not found')
       }
       
-      console.log(`[FRONTEND_ADD_CART] User adding to cart: ${product.title} x${quantity}`);
-      console.log(`[FRONTEND_ADD_CART] Product ID: ${productId}, Total: ${product.price * quantity}`);
       
       await api.cart.add(productId, quantity)
-      console.log(`[FRONTEND_ADD_CART] Successfully added to cart`);
       alert(`Added ${quantity} ${product.title} to cart!`)
       navigate('/cart')
     } catch (error) {
-      console.error('Failed to add to cart:', error)
       if (error.message.includes('Internal Server Error')) {
         alert('Please log in to add items to your cart')
         navigate('/login')
@@ -156,15 +151,11 @@ const ProductDetailPage = () => {
         throw new Error('Product ID not found')
       }
       
-      console.log(`[FRONTEND_BUY_NOW] User buying now: ${product.title} x${quantity}`);
-      console.log(`[FRONTEND_BUY_NOW] Product ID: ${productId}, Total: ${product.price * quantity}`);
       
       await api.cart.add(productId, quantity)
-      console.log(`[FRONTEND_BUY_NOW] Successfully added to cart, navigating to checkout`);
       navigate('/checkout')
       
     } catch (error) {
-      console.error('Failed to add to cart for buy now:', error)
       if (error.message.includes('Internal Server Error')) {
         alert('Please log in to purchase items')
         navigate('/login')
@@ -202,7 +193,6 @@ const ProductDetailPage = () => {
       }
       setIsWishlisted(!isWishlisted)
     } catch (error) {
-      console.error('Failed to update wishlist:', error)
       if (error.message.includes('Authentication required')) {
         alert('Please log in to add items to favorites')
         navigate('/login')
@@ -236,7 +226,6 @@ const ProductDetailPage = () => {
       alert("Review submitted successfully!")
       setShowReviewModal(false)
     } catch (error) {
-      console.error('Failed to submit review:', error)
       if (error.message.includes('Authentication required')) {
         alert('Please log in to write a review')
         navigate('/login')

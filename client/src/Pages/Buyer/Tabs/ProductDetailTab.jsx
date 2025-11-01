@@ -35,7 +35,6 @@ const ProductDetailTab = ({
       const productReviews = Array.isArray(allReviews) ? allReviews.filter(review => review.product_id === selectedProduct.id) : []
       setReviews(productReviews)
     } catch (error) {
-      console.error('Failed to fetch reviews:', error)
       setReviews([])
     } finally {
       setReviewsLoading(false)
@@ -63,7 +62,6 @@ const ProductDetailTab = ({
       fetchReviews() // Refresh reviews
       alert('Review submitted successfully!')
     } catch (error) {
-      console.error('Failed to submit review:', error)
       alert('Failed to submit review. Please try again.')
     } finally {
       setSubmittingReview(false)
@@ -207,7 +205,6 @@ const ProductDetailTab = ({
                         await api.cart.add(selectedProduct.id, quantity)
                         alert('Product added to cart!')
                       } catch (error) {
-                        console.error('Failed to add to cart:', error)
                         alert('Failed to add to cart. Please try again.')
                       }
                     }}

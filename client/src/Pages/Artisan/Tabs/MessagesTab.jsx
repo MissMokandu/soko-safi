@@ -83,7 +83,6 @@ const MessagesTab = ({ loading, authLoading }) => {
                 ) : (
                   <div>
                     {conversations.map((conversation) => {
-                      console.log('[ARTISAN_MESSAGES] Conversation data:', conversation)
                       return (
                       <button
                         key={conversation.id}

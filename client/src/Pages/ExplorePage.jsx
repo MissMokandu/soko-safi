@@ -58,7 +58,6 @@ const ExplorePage = () => {
         
         setCategories(categoriesWithCounts)
       } catch (error) {
-        console.error("Failed to fetch data:", error);
         setError("Failed to load products. Please try again later.");
 
         const fallbackProducts = await api.products.getAll().catch(() => []);

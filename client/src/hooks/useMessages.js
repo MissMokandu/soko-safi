@@ -3,7 +3,6 @@ import { api } from '../services/api'
 import { uploadToCloudinary } from '../services/cloudinary'
 
 export const useMessages = (id, isAuthenticated) => {
-  console.log('[USE_MESSAGES] Hook called with:', { id, isAuthenticated })
   
   const [conversations, setConversations] = useState([])
   const [messages, setMessages] = useState([])
@@ -13,7 +12,6 @@ export const useMessages = (id, isAuthenticated) => {
   const [error, setError] = useState(null)
   const initializationRef = useRef(new Set())
   
-  console.log('[USE_MESSAGES] State:', { 
     conversationsCount: conversations.length, 
     messagesCount: messages.length, 
     selectedConversation, 
@@ -42,7 +40,6 @@ export const useMessages = (id, isAuthenticated) => {
         setSelectedConversation(data[0].id)
       }
     } catch (error) {
-      console.error('Failed to load conversations:', error)
       setError('Failed to load conversations')
     } finally {
       if (!id) setLoading(false)
@@ -54,34 +51,28 @@ export const useMessages = (id, isAuthenticated) => {
       const data = await api.messages.getMessages(conversationId)
       setMessages(Array.isArray(data) ? data : [])
     } catch (error) {
-      console.error('Failed to load messages:', error)
       setMessages([])
     }
   }
 
   const initializeConversation = async (userId) => {
     try {
-      console.log('[USE_MESSAGES] Initializing conversation for userId:', userId)
       setLoading(true)
       const response = await api.messages.initConversation(userId)
       const conversation = response.conversation
       
-      console.log('[USE_MESSAGES] Conversation initialized:', conversation)
       
       setConversations(prev => {
         const exists = prev.find(c => c.id == userId)
-        console.log('[USE_MESSAGES] Existing conversation found:', exists)
         if (exists) {
           setSelectedConversation(userId)
           return prev
         }
         const updated = [conversation, ...prev]
         setSelectedConversation(userId)
-        console.log('[USE_MESSAGES] Updated conversations:', updated)
         return updated
       })
     } catch (error) {
-      console.error('[USE_MESSAGES] Failed to initialize conversation:', error)
       setError('Failed to start conversation')
     } finally {
       setLoading(false)
@@ -143,7 +134,6 @@ export const useMessages = (id, isAuthenticated) => {
       
       return true
     } catch (error) {
-      console.error('Failed to send message:', error)
       throw error
     } finally {
       setSending(false)
@@ -163,9 +153,7 @@ export const useMessages = (id, isAuthenticated) => {
   }, [selectedConversation])
 
   useEffect(() => {
-    console.log('[USE_MESSAGES] useEffect triggered:', { id, isAuthenticated })
     if (id && isAuthenticated && !initializationRef.current.has(id)) {
-      console.log('[USE_MESSAGES] Calling initializeConversation')
       initializationRef.current.add(id)
       initializeConversation(id)
     }

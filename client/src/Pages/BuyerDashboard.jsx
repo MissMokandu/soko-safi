@@ -36,7 +36,6 @@ const BuyerDashboard = ({ authLoading = false }) => {
     ? window.location.pathname.split('/messages-new/')[1] 
     : null;
   
-  console.log('[BUYER_DASHBOARD] Route info:', {
     pathname: window.location.pathname,
     artisanIdFromRoute,
     activeTab,
@@ -94,7 +93,6 @@ const BuyerDashboard = ({ authLoading = false }) => {
   // Load dashboard data on component mount
   useEffect(() => {
     if (!authLoading && isAuthenticated && user) {
-      console.log("Loading buyer dashboard for user:", user);
       loadDashboardData();
 
       // Check URL parameter for tab
@@ -103,7 +101,6 @@ const BuyerDashboard = ({ authLoading = false }) => {
       
       // Handle messages-new route
       if (window.location.pathname.startsWith('/messages-new')) {
-        console.log('[BUYER_DASHBOARD] Setting messages tab active for messages-new route')
         setActiveTab('messages')
       } else if (tabParam === "explore") {
         setActiveTab("explore");
@@ -117,7 +114,6 @@ const BuyerDashboard = ({ authLoading = false }) => {
         loadProfile();
       }
     } else if (!authLoading) {
-      console.log("User not authenticated, skipping dashboard load");
     }
   }, [authLoading, isAuthenticated, user, searchParams]);
 
@@ -143,7 +139,6 @@ const BuyerDashboard = ({ authLoading = false }) => {
       const paymentsData =
         results[3].status === "fulfilled" ? results[3].value : [];
 
-      console.log("Dashboard data loaded:", {
         ordersData,
         messagesData,
         collectionsData,
@@ -180,7 +175,6 @@ const BuyerDashboard = ({ authLoading = false }) => {
       // Check if any critical errors occurred
       const failedRequests = results.filter((r) => r.status === "rejected");
       if (failedRequests.length > 0) {
-        console.warn(
           "Some dashboard data failed to load:",
           failedRequests.map((r) => r.reason?.message)
         );
@@ -202,7 +196,6 @@ const BuyerDashboard = ({ authLoading = false }) => {
       if (error.message.includes("Please log in")) {
         setError("Please log in to view your dashboard.");
       } else {
-        console.warn(
           "Dashboard endpoints failed, showing empty state for new user"
         );
       }
@@ -222,7 +215,6 @@ const BuyerDashboard = ({ authLoading = false }) => {
       const productsArray = Array.isArray(productsResponse)
         ? productsResponse
         : [];
-      console.log(
         `[FRONTEND_PRODUCTS] Loaded ${productsArray.length} products in explore page`
       );
       setExploreProducts(productsArray);
@@ -257,13 +249,9 @@ const BuyerDashboard = ({ authLoading = false }) => {
   const loadProductDetails = async (productId) => {
     try {
       setProductLoading(true);
-      console.log('[PRODUCT_DETAILS] Fetching product details for ID:', productId);
       const product = await api.products.getById(productId);
-      console.log('[PRODUCT_DETAILS] Product details received:', product);
-      console.log('[PRODUCT_DETAILS] Artisan ID in product:', product.artisan_id);
       setSelectedProduct(product);
     } catch (error) {
-      console.error('[PRODUCT_DETAILS] Failed to fetch product details:', error);
       handleAuthError(error, "loadProductDetails");
       setError("Failed to load product details. Please try again.");
     } finally {
@@ -327,7 +315,6 @@ const BuyerDashboard = ({ authLoading = false }) => {
         setFavoriteProducts((prev) => new Set([...prev, productId]));
       }
     } catch (error) {
-      console.error("Failed to toggle favorite:", error);
       alert("Failed to update favorites. Please try again.");
     }
   };
@@ -344,7 +331,6 @@ const BuyerDashboard = ({ authLoading = false }) => {
         profile_picture_url: profileData.profile_picture_url || "",
       });
     } catch (error) {
-      console.error("Failed to load profile:", error);
     }
   };
 
@@ -363,7 +349,6 @@ const BuyerDashboard = ({ authLoading = false }) => {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
-      console.error("Profile update error:", error);
       alert("Failed to update profile. Please try again.");
     } finally {
       setLoading(false);

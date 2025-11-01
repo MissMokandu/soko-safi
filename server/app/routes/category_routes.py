@@ -8,7 +8,6 @@ from flask import Blueprint, request
 from app.models import db, Category, Subcategory
 from app.auth import require_auth, require_role, require_ownership_or_role
 
-category_bp = Blueprint('category_bp', __name__)
 category_api = Api(category_bp)
 
 class CategoryListResource(Resource):
@@ -53,7 +52,6 @@ class CategoryListResource(Resource):
             }, 201
         except Exception as e:
             db.session.rollback()
-            print(f"[CategoryListResource] Error creating category: {str(e)}")
             return {'error': 'Failed to create category', 'message': str(e)}, 500
 
 class CategoryResource(Resource):

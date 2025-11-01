@@ -8,7 +8,6 @@ from flask import Blueprint, request
 from app.models import db, Review
 from app.auth import require_auth, require_role, require_ownership_or_role
 
-review_bp = Blueprint('review_bp', __name__)
 review_api = Api(review_bp)
 
 class ReviewListResource(Resource):

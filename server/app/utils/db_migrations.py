@@ -15,7 +15,6 @@ def ensure_deleted_at_columns(app):
         engine = db.engine
         insp = inspect(engine)
     except Exception as e:
-        print(f"Failed to initialize database inspector: {e}")
         return
 
     tables = [
@@ -41,10 +40,7 @@ def ensure_deleted_at_columns(app):
                 with engine.connect() as conn:
                     conn.execute(sql)
                     conn.commit()
-                print(f"Added column {col} to {table_name}")
             except Exception as e:
-                print(f"Failed to add column {col} to {table_name}: {e}")
                 # Log error but don't raise to prevent app startup failure
         else:
             # For other DBs, log and skip - migrations required
-            print(f"Column {col} missing on {table_name}. Please run a DB migration for {engine.dialect.name}.")

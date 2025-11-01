@@ -79,11 +79,20 @@ def require_auth(f):
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        print(f"[AUTH_DECORATOR] Checking auth for {f.__name__}")
+        print(f"[AUTH_DECORATOR] Session data: {dict(session)}")
+        print(f"[AUTH_DECORATOR] Authenticated: {session.get('authenticated')}")
+        print(f"[AUTH_DECORATOR] User ID: {session.get('user_id')}")
+        print(f"[AUTH_DECORATOR] User Role: {session.get('user_role')}")
+        
         if not session.get('authenticated'):
+            print(f"[AUTH_DECORATOR] Authentication failed - no authenticated session")
             return {
                 'error': 'Authentication required',
                 'message': 'Please log in to access this resource'
             }, 401
+        
+        print(f"[AUTH_DECORATOR] Authentication successful")
         return f(*args, **kwargs)
     return decorated_function
 

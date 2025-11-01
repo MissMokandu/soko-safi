@@ -12,10 +12,8 @@ export const CartProvider = ({ children }) => {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      console.log('User authenticated, loading cart for:', user)
       loadCart()
     } else {
-      console.log('User not authenticated, clearing cart')
       setCartItems([])
     }
   }, [isAuthenticated, user])
@@ -30,52 +28,36 @@ export const CartProvider = ({ children }) => {
 
   const loadCart = async () => {
     try {
-      console.log('[FRONTEND_CART_LOAD] Starting cart load...')
       setLoading(true)
       const cart = await api.cart.get()
-      console.log('[FRONTEND_CART_LOAD] Raw response from backend:', cart)
-      console.log('[FRONTEND_CART_LOAD] Response type:', typeof cart, 'Is array:', Array.isArray(cart))
       
       // Handle different response formats from backend
       if (Array.isArray(cart)) {
-        console.log(`[FRONTEND_CART_LOAD] Setting ${cart.length} cart items from array response`)
         setCartItems(cart)
       } else if (cart && Array.isArray(cart.items)) {
-        console.log(`[FRONTEND_CART_LOAD] Setting ${cart.items.length} cart items from cart.items`)
         setCartItems(cart.items)
       } else if (cart && Array.isArray(cart.cart_items)) {
-        console.log(`[FRONTEND_CART_LOAD] Setting ${cart.cart_items.length} cart items from cart.cart_items`)
         setCartItems(cart.cart_items)
       } else if (cart && cart.data && Array.isArray(cart.data)) {
-        console.log(`[FRONTEND_CART_LOAD] Setting ${cart.data.length} cart items from cart.data`)
         setCartItems(cart.data)
       } else {
-        console.log('[FRONTEND_CART_LOAD] Cart format not recognized, setting empty. Response:', cart)
         setCartItems([])
       }
     } catch (error) {
-      console.error('[FRONTEND_CART_LOAD] Failed to load cart:', error)
       if (error.message.includes('Please log in')) {
-        console.log('[FRONTEND_CART_LOAD] User not authenticated, cart will be empty')
       }
       setCartItems([])
     } finally {
       setLoading(false)
-      console.log('[FRONTEND_CART_LOAD] Cart load completed')
     }
   }
 
   const addToCart = async (productId, quantity = 1) => {
     try {
-      console.log('[FRONTEND_CART_ADD] Starting add to cart:', { productId, quantity })
       const result = await api.cart.add(productId, quantity)
-      console.log('[FRONTEND_CART_ADD] Backend response:', result)
-      console.log('[FRONTEND_CART_ADD] Reloading cart from server...')
       await loadCart() // Reload the cart from the server
-      console.log('[FRONTEND_CART_ADD] Cart reload completed')
       return true
     } catch (error) {
-      console.error('[FRONTEND_CART_ADD] Failed to add to cart:', error)
       if (error.message.includes('Internal Server Error')) {
         throw new Error('Please log in to add items to your cart')
       }

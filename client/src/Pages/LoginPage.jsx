@@ -45,24 +45,18 @@ const LoginPage = () => {
       clearError(); // Clear any previous auth errors
       const result = await login(formData)
       
-      console.log(`[FRONTEND_LOGIN] User logged in: ${result.user?.email} (${result.user?.role})`);
-      console.log(`[FRONTEND_LOGIN] User ID: ${result.user?.id}`);
       
       // Get the intended destination from location state or default based on role
       const from = location.state?.from?.pathname
       const userRole = result.user?.role || 'buyer'
       
       if (from && from !== '/login') {
-        console.log(`[FRONTEND_LOGIN] Redirecting to intended page: ${from}`);
         navigate(from, { replace: true })
       } else if (userRole === 'artisan') {
-        console.log(`[FRONTEND_LOGIN] Redirecting artisan to dashboard`);
         navigate('/artisan-dashboard', { replace: true })
       } else if (userRole === 'admin') {
-        console.log(`[FRONTEND_LOGIN] Redirecting admin to dashboard`);
         navigate('/admin-dashboard', { replace: true })
       } else {
-        console.log(`[FRONTEND_LOGIN] Redirecting buyer to dashboard`);
         navigate('/buyer-dashboard', { replace: true })
       }
     } catch (error) {

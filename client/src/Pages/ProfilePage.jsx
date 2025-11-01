@@ -38,7 +38,6 @@ const ProfilePage = ({ authLoading = false }) => {
         profile_picture_url: profileData.profile_picture_url || ''
       })
     } catch (error) {
-      console.error('Failed to load profile:', error)
     }
   }
 
@@ -57,7 +56,6 @@ const ProfilePage = ({ authLoading = false }) => {
       setShowSuccess(true)
       setTimeout(() => setShowSuccess(false), 3000)
     } catch (error) {
-      console.error('Profile update error:', error)
     } finally {
       setLoading(false)
     }

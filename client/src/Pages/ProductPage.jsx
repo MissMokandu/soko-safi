@@ -30,7 +30,6 @@ const ProductPage = () => {
           .slice(0, 4)
         setRelatedProducts(related)
       } catch (error) {
-        console.error('Failed to fetch product:', error)
         setError('Product not found')
       } finally {
         setLoading(false)
@@ -49,7 +48,6 @@ const ProductPage = () => {
       return
     }
     // Add to cart logic for authenticated users
-    console.log('Adding to cart:', product.id, quantity)
   }
 
   const handleAddToFavorites = () => {
@@ -59,7 +57,6 @@ const ProductPage = () => {
       return
     }
     // Add to favorites logic for authenticated users
-    console.log('Adding to favorites:', product.id)
   }
 
   if (loading) {

@@ -15,7 +15,6 @@ const DashboardNavbar = () => {
         const profile = await api.profile.get()
         setProfilePicture(profile.profile_picture_url)
       } catch (error) {
-        console.error('Failed to fetch profile picture:', error)
       }
     }
     

@@ -74,21 +74,6 @@ def create_app():
     from app.routes.upload_routes import upload_bp
     from app.routes.collection_routes import collection_bp
     
-    flask_app.register_blueprint(auth_bp, url_prefix='/api/auth')
-    flask_app.register_blueprint(user_bp, url_prefix='/api/users')
-    flask_app.register_blueprint(product_bp, url_prefix='/api/products')
-    flask_app.register_blueprint(cart_bp, url_prefix='/api/cart')
-    flask_app.register_blueprint(category_bp, url_prefix='/api/categories')
-    flask_app.register_blueprint(order_bp, url_prefix='/api/orders')
-    flask_app.register_blueprint(payment_bp, url_prefix='/api/payments')
-    flask_app.register_blueprint(review_bp, url_prefix='/api/reviews')
-    flask_app.register_blueprint(message_bp, url_prefix='/api/messages')
-    flask_app.register_blueprint(favorite_bp, url_prefix='/api/favorites')
-    flask_app.register_blueprint(follow_bp, url_prefix='/api/follows')
-    flask_app.register_blueprint(notification_bp, url_prefix='/api/notifications')
-    flask_app.register_blueprint(artisan_bp, url_prefix='/api/artisan')
-    flask_app.register_blueprint(upload_bp, url_prefix='/api/upload')
-    flask_app.register_blueprint(collection_bp, url_prefix='/api/collections')
     
     # Routes
     @flask_app.route('/')

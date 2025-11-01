@@ -18,17 +18,11 @@ const CartPage = ({ authLoading = false }) => {
   // Reload cart when page mounts
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      console.log("[CART_PAGE] Page mounted, reloading cart...");
       loadCart();
     }
   }, [authLoading, isAuthenticated]);
 
   // Debug logging
-  console.log("[CART_PAGE] Render - Auth status:", isAuthenticated);
-  console.log("[CART_PAGE] Render - User:", user);
-  console.log("[CART_PAGE] Render - Loading:", loading);
-  console.log("[CART_PAGE] Render - Cart items:", cartItems);
-  console.log("[CART_PAGE] Render - Cart items count:", cartItems?.length || 0);
 
   const handleUpdateQuantity = async (id, newQuantity) => {
     if (newQuantity < 1) return;

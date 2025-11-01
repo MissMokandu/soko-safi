@@ -8,7 +8,6 @@ from flask import Blueprint, request
 from app.models import db, Cart, CartItem
 # Removed problematic auth imports
 
-cart_bp = Blueprint('cart_bp', __name__)
 cart_api = Api(cart_bp)
 
 class CartListResource(Resource):
@@ -106,7 +105,6 @@ class CartItemListResource(Resource):
     def get(self):
         """Get user's cart items"""
         try:
-            print(f"[CART_GET] Request from {request.remote_addr}")
             
             # Get user_id from session or JWT
             from flask import session
@@ -118,21 +116,17 @@ class CartItemListResource(Resource):
                 except Exception:
                     user_id = None
             
-            print(f"[CART_GET] Resolved user_id: {user_id}")
             
             if not user_id:
-                print(f"[CART_GET] No user_id found")
                 return [], 200
             
             # Get or create user's cart
             cart = Cart.query.filter_by(user_id=user_id).first()
             if not cart:
-                print(f"[CART_GET] No cart found for user {user_id}")
                 return [], 200
             
             # Get cart items with product details
             from app.models.product import Product
-            print(f"[CART_GET] Querying cart items for cart_id: {cart.id}")
             
             cart_items = db.session.query(CartItem, Product).join(
                 Product, CartItem.product_id == Product.id
@@ -140,7 +134,6 @@ class CartItemListResource(Resource):
                 CartItem.cart_id == cart.id
             ).all()
             
-            print(f"[CART_GET] Raw query result: {len(cart_items)} items")
             
             result = []
             for cart_item, product in cart_items:
@@ -160,15 +153,11 @@ class CartItemListResource(Resource):
                         'stock': product.stock
                     }
                 }
-                print(f"[CART_GET] Processing item: {item_data['product']['title']} x{item_data['quantity']}")
                 result.append(item_data)
             
-            print(f"[CART_GET] Returning {len(result)} cart items for user {user_id}")
-            print(f"[CART_GET] Final result: {result}")
             return result, 200
             
         except Exception as e:
-            print(f"[CART_GET] Error: {e}")
             import traceback
             traceback.print_exc()
             return [], 200
@@ -176,7 +165,6 @@ class CartItemListResource(Resource):
     def post(self):
         """Add item to cart"""
         try:
-            print(f"[CART_ADD] Request from {request.remote_addr}")
             
             # Get user_id from session or JWT
             from flask import session
@@ -188,12 +176,10 @@ class CartItemListResource(Resource):
                 except Exception:
                     user_id = None
 
-            print(f"[CART_ADD] Resolved user_id: {user_id}")
             if not user_id:
                 return {'error': 'Authentication required'}, 401
             
             data = request.json or {}
-            print(f"[CART_ADD] Request data: {data}")
             
             product_id = data.get('product_id')
             quantity = data.get('quantity', 1)
@@ -246,11 +232,9 @@ class CartItemListResource(Resource):
                 }
             }
             
-            print(f"[CART_ADD] Success: {result}")
             return result, 201
             
         except Exception as e:
-            print(f"[CART_ADD] Error: {e}")
             import traceback
             traceback.print_exc()
             db.session.rollback()

@@ -5,7 +5,6 @@ from app.models import db, Message
 
 @socketio.on('connect')
 def handle_connect():
-    print(f'Client {request.sid} connected')
     emit('status', {'msg': 'Connected to server'})
 
 @socketio.on('disconnect')
@@ -17,7 +16,6 @@ def handle_disconnect():
             break
     if user_id:
         del connected_users[user_id]
-    print(f'Client {request.sid} disconnected')
 
 @socketio.on('join')
 def handle_join(data):
@@ -31,7 +29,6 @@ def handle_join(data):
         join_room(f'user_{user_id}')
         emit('status', {'msg': f'User {user_id} joined'})
     except Exception as e:
-        print(f'Error in handle_join: {e}')
         emit('error', {'msg': 'Failed to join'})
 
 @socketio.on('send_message')
@@ -74,7 +71,6 @@ def handle_message(data):
         emit('message_sent', {'status': 'delivered', 'message_id': message.id})
     except Exception as e:
         db.session.rollback()
-        print(f'Error in handle_message: {e}')
         emit('error', {'msg': 'Failed to send message'})
 
 @socketio.on('get_chat_history')
@@ -103,5 +99,4 @@ def handle_chat_history(data):
         
         emit('chat_history', {'messages': chat_history})
     except Exception as e:
-        print(f'Error in handle_chat_history: {e}')
         emit('error', {'msg': 'Failed to get chat history'})

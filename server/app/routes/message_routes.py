@@ -8,7 +8,6 @@ from flask import Blueprint, request
 from app.models import db, Message
 from app.auth import require_auth, require_role, require_ownership_or_role
 
-message_bp = Blueprint('message_bp', __name__)
 message_api = Api(message_bp)
 
 class MessageListResource(Resource):
@@ -173,6 +172,8 @@ class MessageConversationsResource(Resource):
         from sqlalchemy import func, desc
 
         current_user_id = session.get('user_id')
+        print(f"[BACKEND_CONVERSATIONS] Current user ID: {current_user_id}")
+        print(f"[BACKEND_CONVERSATIONS] Session data: {dict(session)}")
 
         # Get latest message for each conversation partner
         subquery = db.session.query(
@@ -205,9 +206,14 @@ class MessageConversationsResource(Resource):
         ).order_by(desc(Message.created_at)).all()
 
         conversations = []
+        print(f"[BACKEND_CONVERSATIONS] Found {len(latest_messages)} latest messages")
+        
         for msg in latest_messages:
             partner_id = msg.receiver_id if msg.sender_id == current_user_id else msg.sender_id
             partner = User.query.get(partner_id)
+            
+            print(f"[BACKEND_CONVERSATIONS] Processing message with partner_id: {partner_id}")
+            print(f"[BACKEND_CONVERSATIONS] Partner found: {partner is not None}")
             
             if partner:
                 # Count unread messages from this partner
@@ -220,9 +226,7 @@ class MessageConversationsResource(Resource):
                 # Get user avatar from profile or generate one
                 avatar_url = partner.profile_picture_url if hasattr(partner, 'profile_picture_url') and partner.profile_picture_url else f'https://ui-avatars.com/api/?name={partner.full_name or "User"}&background=6366f1&color=fff'
                 
-                print(f"[BACKEND_CONVERSATIONS] Message timestamp: {msg.created_at}, type: {type(msg.created_at)}")
-                
-                conversations.append({
+                conversation = {
                     'id': partner_id,
                     'artisan': {
                         'id': partner_id,
@@ -235,10 +239,12 @@ class MessageConversationsResource(Resource):
                     'timestamp': msg.created_at.isoformat() if msg.created_at else '',
                     'created_at': msg.created_at.isoformat() if msg.created_at else '',
                     'unread': unread_count
-                })
+                }
                 
-                print(f"[BACKEND_CONVERSATIONS] Added conversation: {conversations[-1]}")
+                print(f"[BACKEND_CONVERSATIONS] Added conversation: {conversation}")
+                conversations.append(conversation)
 
+        print(f"[BACKEND_CONVERSATIONS] Returning {len(conversations)} conversations")
         return conversations
 
 class ConversationMessagesResource(Resource):
@@ -271,7 +277,6 @@ class ConversationMessagesResource(Resource):
 
         formatted_messages = []
         for msg in messages:
-            print(f"[BACKEND_MESSAGES] Message timestamp: {msg.created_at}, type: {type(msg.created_at)}")
             
             formatted_messages.append({
                 'id': msg.id,
@@ -287,7 +292,6 @@ class ConversationMessagesResource(Resource):
                 'is_read': msg.is_read
             })
             
-            print(f"[BACKEND_MESSAGES] Added message: {formatted_messages[-1]}")
 
         return formatted_messages
 

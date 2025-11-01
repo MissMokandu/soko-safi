@@ -59,7 +59,6 @@ const CollectionPage = () => {
   };
 
   const addToCart = (itemId) => {
-    console.log("Adding to cart:", itemId);
     // Add to cart logic
   };
 

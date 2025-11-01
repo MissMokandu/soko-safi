@@ -15,12 +15,15 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const checkAuth = async () => {
-    console.log('[AuthContext] Starting auth check...');
+    console.log('[AUTH_CONTEXT] Starting checkAuth');
     setError(null);
     
     // Check token validity
-    if (tokenManager.isTokenExpired()) {
-      console.log('[AuthContext] Token expired');
+    const isExpired = tokenManager.isTokenExpired();
+    console.log('[AUTH_CONTEXT] Token expired:', isExpired);
+    
+    if (isExpired) {
+      console.log('[AUTH_CONTEXT] Token expired, removing and setting user to null');
       tokenManager.removeToken();
       setUser(null);
       setLoading(false);
@@ -30,8 +33,11 @@ export const AuthProvider = ({ children }) => {
     const token = tokenManager.getToken();
     const storedUser = localStorage.getItem('user');
     
+    console.log('[AUTH_CONTEXT] Token exists:', !!token);
+    console.log('[AUTH_CONTEXT] Stored user exists:', !!storedUser);
+    
     if (!token || !storedUser) {
-      console.log('[AuthContext] No valid token or user found');
+      console.log('[AUTH_CONTEXT] No token or stored user, setting user to null');
       setUser(null);
       setLoading(false);
       return;
@@ -40,18 +46,24 @@ export const AuthProvider = ({ children }) => {
     // Load user from storage
     try {
       const userData = JSON.parse(storedUser);
+      console.log('[AUTH_CONTEXT] Loaded user from storage:', userData);
       setUser(userData);
       setLoading(false);
-      console.log('[AuthContext] User authenticated from storage');
       
       // Background token refresh if stale
-      if (tokenManager.isTokenStale()) {
+      const isStale = tokenManager.isTokenStale();
+      console.log('[AUTH_CONTEXT] Token stale:', isStale);
+      
+      if (isStale) {
+        console.log('[AUTH_CONTEXT] Refreshing stale token');
         api.auth.getSession().then(data => {
+          console.log('[AUTH_CONTEXT] Session refresh result:', data);
           if (data?.authenticated && data?.user) {
             setUser(data.user);
             localStorage.setItem('user', JSON.stringify(data.user));
           }
         }).catch(error => {
+          console.error('[AUTH_CONTEXT] Session refresh failed:', error);
           if (error.status === 401) {
             logout();
           }
@@ -59,7 +71,7 @@ export const AuthProvider = ({ children }) => {
       }
       
     } catch (e) {
-      console.warn('[AuthContext] Invalid user data');
+      console.error('[AUTH_CONTEXT] Failed to parse stored user:', e);
       tokenManager.removeToken();
       setUser(null);
       setLoading(false);
@@ -68,25 +80,33 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
+      console.log('[AUTH_CONTEXT] Starting login');
       setError(null);
       setLoading(true);
       const data = await api.auth.login(credentials);
-      console.log('Login response:', data);
+      
+      console.log('[AUTH_CONTEXT] Login response:', data);
       
       // Store token and user data
       if (data.token) {
+        console.log('[AUTH_CONTEXT] Storing token');
         secureStorage.setToken(data.token);
         tokenManager.setToken(data.token);
+      } else {
+        console.warn('[AUTH_CONTEXT] No token in login response');
       }
       
       if (data.user) {
+        console.log('[AUTH_CONTEXT] Setting user:', data.user);
         setUser(data.user);
         localStorage.setItem('user', JSON.stringify(data.user));
-        console.log('User logged in and stored:', data.user);
+      } else {
+        console.warn('[AUTH_CONTEXT] No user in login response');
       }
       
       return data;
     } catch (error) {
+      console.error('[AUTH_CONTEXT] Login error:', error);
       setError(error.message);
       throw error;
     } finally {
@@ -99,7 +119,6 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       setLoading(true);
       const data = await api.auth.register(userData);
-      console.log('Registration response:', data);
       
       // Store token and user data
       if (data.token) {
@@ -109,7 +128,6 @@ export const AuthProvider = ({ children }) => {
       if (data.user) {
         setUser(data.user);
         localStorage.setItem('user', JSON.stringify(data.user));
-        console.log('User registered and stored:', data.user);
       }
       
       return data;
@@ -123,11 +141,13 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      console.log('[AUTH_CONTEXT] Starting logout');
       setError(null);
       await api.auth.logout();
     } catch (error) {
-      console.warn('Logout error:', error.message);
+      console.error('[AUTH_CONTEXT] Logout API error:', error);
     } finally {
+      console.log('[AUTH_CONTEXT] Clearing user and tokens');
       setUser(null);
       secureStorage.clear();
       tokenManager.removeToken();

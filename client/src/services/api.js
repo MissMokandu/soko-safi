@@ -11,8 +11,6 @@ try {
   handleAuthError = errorHandler.handleAuthError;
   secureStorage = storage.secureStorage;
 } catch {
-  logError = console.error;
-  handleAuthError = console.error;
 }
 
 // API request helper with comprehensive error handling
@@ -22,6 +20,11 @@ const apiRequest = async (endpoint, options = {}) => {
     
     // Add JWT token if available
     const token = secureStorage?.getToken() || localStorage.getItem('token');
+    console.log(`[API_REQUEST] ${options.method || 'GET'} ${endpoint}`);
+    console.log(`[API_REQUEST] Full URL: ${url}`);
+    console.log(`[API_REQUEST] Token exists: ${!!token}`);
+    console.log(`[API_REQUEST] Token value: ${token ? token.substring(0, 20) + '...' : 'none'}`);
+    
     const config = {
       method: "GET",
       headers: {
@@ -32,6 +35,12 @@ const apiRequest = async (endpoint, options = {}) => {
       credentials: "include", // Include cookies for cross-origin requests
       ...options,
     };
+    
+    console.log(`[API_REQUEST] Request config:`, {
+      method: config.method,
+      headers: config.headers,
+      credentials: config.credentials
+    });
 
     // Always set Content-Type for non-GET requests unless it's FormData
     if (config.method !== "GET") {
@@ -41,19 +50,31 @@ const apiRequest = async (endpoint, options = {}) => {
     }
 
     const response = await fetch(url, config);
+    
+    console.log(`[API_RESPONSE] Status: ${response.status} ${response.statusText}`);
+    console.log(`[API_RESPONSE] Headers:`, Object.fromEntries(response.headers.entries()));
 
     let data;
     try {
       data = await response.json();
+      console.log(`[API_RESPONSE] Data:`, data);
     } catch {
       data = { message: response.statusText };
+      console.log(`[API_RESPONSE] Failed to parse JSON, using statusText:`, data);
     }
 
     if (!response.ok) {
       const error = new Error(data.error || data.message || `HTTP ${response.status}`);
       error.status = response.status;
       
+      console.error(`[API_ERROR] ${response.status} on ${endpoint}:`, {
+        error: error.message,
+        data,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+      
       if (response.status === 401) {
+        console.log(`[AUTH_ERROR] 401 Unauthorized - clearing tokens`);
         logError && logError(error, `API_AUTH_ERROR: ${endpoint}`);
         // Clear invalid token
         localStorage.removeItem('token');
@@ -62,7 +83,8 @@ const apiRequest = async (endpoint, options = {}) => {
       
       throw error;
     }
-
+    
+    console.log(`[API_SUCCESS] ${endpoint} completed successfully`);
     return data;
   } catch (error) {
     logError && logError(error, `API_REQUEST: ${endpoint}`);
@@ -73,8 +95,6 @@ const apiRequest = async (endpoint, options = {}) => {
 // Helper to enhance product data
 const enhanceProduct = (product) => {
   if (!product) return product;
-  console.log('[ENHANCE_PRODUCT] Original product:', product);
-  console.log('[ENHANCE_PRODUCT] Original artisan_id:', product.artisan_id);
   const enhanced = {
     ...product,
     price:
@@ -95,7 +115,6 @@ const enhanceProduct = (product) => {
     review_count: product.review_count || 0,
     in_stock: product.stock > 0,
   };
-  console.log('[ENHANCE_PRODUCT] Enhanced product artisan_id:', enhanced.artisan_id);
   return enhanced;
 };
 
@@ -104,11 +123,18 @@ export const api = {
   auth: {
     login: async (credentials) => {
       try {
-        return await apiRequest("/auth/login", {
+        console.log('[AUTH_LOGIN] Starting login process');
+        console.log('[AUTH_LOGIN] Credentials:', { email: credentials.email, password: '***' });
+        
+        const result = await apiRequest("/auth/login", {
           method: "POST",
           body: JSON.stringify(credentials),
         });
+        
+        console.log('[AUTH_LOGIN] Login successful:', result);
+        return result;
       } catch (error) {
+        console.error('[AUTH_LOGIN] Login failed:', error);
         throw new Error(error.message || "Login failed");
       }
     },
@@ -131,16 +157,23 @@ export const api = {
     },
     getSession: async () => {
       try {
-        return await apiRequest("/auth/session");
+        console.log('[AUTH_SESSION] Checking session');
+        const result = await apiRequest("/auth/session");
+        console.log('[AUTH_SESSION] Session result:', result);
+        return result;
       } catch (error) {
+        console.error('[AUTH_SESSION] Session check failed:', error);
         return { authenticated: false };
       }
     },
     getProfile: async () => {
       try {
+        console.log('[AUTH_PROFILE] Getting profile');
         const result = await apiRequest("/auth/profile");
+        console.log('[AUTH_PROFILE] Profile result:', result);
         return result.user || result;
       } catch (error) {
+        console.error('[AUTH_PROFILE] Profile failed:', error);
         throw new Error("Failed to load profile");
       }
     },
@@ -178,7 +211,6 @@ export const api = {
         const products = await apiRequest(`/products/${query}`);
         return Array.isArray(products) ? products.map(enhanceProduct) : [];
       } catch (error) {
-        console.warn("Products getAll failed:", error.message);
         return [];
       }
     },
@@ -225,7 +257,6 @@ export const api = {
       try {
         return await apiRequest("/categories/");
       } catch (error) {
-        console.warn("Categories failed:", error.message);
         return [];
       }
     },
@@ -248,7 +279,6 @@ export const api = {
         try {
           return await apiRequest("/categories/subcategories/");
         } catch (error) {
-          console.warn("Subcategories failed:", error.message);
           return [];
         }
       },
@@ -272,27 +302,20 @@ export const api = {
   cart: {
     get: async () => {
       try {
-        console.log('[FRONTEND_API_CART_GET] Making request to /cart/');
         const result = await apiRequest("/cart/");
-        console.log('[FRONTEND_API_CART_GET] Response received:', result);
-        console.log('[FRONTEND_API_CART_GET] Response type:', typeof result, 'Is array:', Array.isArray(result));
         return Array.isArray(result) ? result : [];
       } catch (error) {
-        console.warn("[FRONTEND_API_CART_GET] Cart get failed:", error.message);
         return [];
       }
     },
     add: async (productId, quantity = 1) => {
       try {
-        console.log('[FRONTEND_API_CART_ADD] Making request to add to cart:', { productId, quantity });
         const result = await apiRequest("/cart/", {
           method: "POST",
           body: JSON.stringify({ product_id: productId, quantity }),
         });
-        console.log('[FRONTEND_API_CART_ADD] Add to cart response:', result);
         return result;
       } catch (error) {
-        console.error('[FRONTEND_API_CART_ADD] Add to cart failed:', error.message);
         throw new Error(error.message || "Failed to add to cart");
       }
     },
@@ -329,7 +352,6 @@ export const api = {
         const orders = await apiRequest("/orders/");
         return Array.isArray(orders) ? orders : [];
       } catch (error) {
-        console.warn("Orders failed:", error.message);
         return [];
       }
     },
@@ -369,7 +391,6 @@ export const api = {
         const reviews = await apiRequest("/reviews/")
         return Array.isArray(reviews) ? reviews : []
       } catch (error) {
-        console.warn("Reviews getAll failed:", error.message)
         return []
       }
     },
@@ -393,7 +414,6 @@ export const api = {
       try {
         return await apiRequest("/messages/conversations");
       } catch (error) {
-        console.warn("Messages failed:", error.message);
         return [];
       }
     },
@@ -411,14 +431,11 @@ export const api = {
     },
     initConversation: async (userId) => {
       try {
-        console.log('[API] initConversation - Calling for userId:', userId)
         const result = await apiRequest(`/messages/init/${userId}`, {
           method: "POST",
         });
-        console.log('[API] initConversation - Result:', result)
         return result;
       } catch (error) {
-        console.error('[API] initConversation - Error:', error)
         throw new Error("Failed to initialize conversation");
       }
     },
@@ -446,7 +463,6 @@ export const api = {
       try {
         return await apiRequest("/favorites/");
       } catch (error) {
-        console.warn("Favorites failed:", error.message);
         return [];
       }
     },
@@ -488,7 +504,6 @@ export const api = {
           )
         );
       } catch (error) {
-        console.warn("Failed to mark messages as delivered:", error.message);
       }
     },
     markAllAsRead: () =>
@@ -529,7 +544,6 @@ export const api = {
         const products = await apiRequest(`/artisan/${id}/products`);
         return Array.isArray(products) ? products.map(enhanceProduct) : [];
       } catch (error) {
-        console.warn("Artisan products failed:", error.message);
         return [];
       }
     },
@@ -537,7 +551,6 @@ export const api = {
       try {
         return await apiRequest("/artisan/dashboard");
       } catch (error) {
-        console.warn("Artisan dashboard failed:", error.message);
         return {
           stats: { total_products: 0, total_orders: 0, total_revenue: 0 },
           products: [],
@@ -550,7 +563,6 @@ export const api = {
         const orders = await apiRequest("/artisan/orders");
         return Array.isArray(orders) ? orders : [];
       } catch (error) {
-        console.warn("Artisan orders failed:", error.message);
         return [];
       }
     },
@@ -559,7 +571,6 @@ export const api = {
         const messages = await apiRequest("/artisan/messages");
         return Array.isArray(messages) ? messages : [];
       } catch (error) {
-        console.warn("Artisan messages failed:", error.message);
         return [];
       }
     },
@@ -581,7 +592,6 @@ export const api = {
           }
         );
       } catch (error) {
-        console.warn("Profile get failed:", error.message);
         return {
           full_name: "",
           description: "",
@@ -612,7 +622,6 @@ export const api = {
       try {
         return await apiRequest("/payments/");
       } catch (error) {
-        console.warn("Payments failed:", error.message);
         return [];
       }
     },

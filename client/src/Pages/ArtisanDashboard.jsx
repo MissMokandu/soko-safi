@@ -53,12 +53,10 @@ const ArtisanDashboard = ({ authLoading = false }) => {
 
   useEffect(() => {
     if (!authLoading && isAuthenticated && user) {
-      console.log('Loading artisan dashboard for user:', user)
       loadDashboardData()
       loadProducts()
       loadProfileData()
     } else if (!authLoading) {
-      console.log('User not authenticated, skipping dashboard load')
     }
   }, [authLoading, isAuthenticated, user])
 
@@ -151,7 +149,6 @@ const ArtisanDashboard = ({ authLoading = false }) => {
         profile_picture_url: profile.profile_picture_url || ''
       })
     } catch (error) {
-      console.error('Failed to load profile data:', error)
     }
   }
 
@@ -168,7 +165,6 @@ const ArtisanDashboard = ({ authLoading = false }) => {
       alert('Profile updated successfully!')
       setShowProfileSettings(false)
     } catch (error) {
-      console.error('Failed to update profile:', error)
       alert('Failed to update profile. Please try again.')
     } finally {
       setProfileLoading(false)
@@ -191,7 +187,6 @@ const ArtisanDashboard = ({ authLoading = false }) => {
         })
         alert('Profile picture updated successfully!')
       } catch (error) {
-        console.error('Failed to upload profile picture:', error)
         alert('Failed to upload profile picture. Please try again.')
       } finally {
         setProfileLoading(false)
@@ -279,7 +274,6 @@ const ArtisanDashboard = ({ authLoading = false }) => {
         try {
           imageUrl = await uploadToCloudinary(selectedFile)
         } catch (error) {
-          console.error('Image upload failed:', error)
           alert('Image upload failed, but product will be saved without new image')
         }
       }
@@ -301,11 +295,9 @@ const ArtisanDashboard = ({ authLoading = false }) => {
       }
 
       if (editingProduct) {
-        console.log('Updating product with data:', productData)
         await api.products.update(editingProduct.id, productData)
         alert('Product updated successfully!')
       } else {
-        console.log('Creating product with data:', productData)
         await api.products.create(productData)
         alert('Product added successfully!')
       }
@@ -319,7 +311,6 @@ const ArtisanDashboard = ({ authLoading = false }) => {
       setSelectedFile(null)
       
     } catch (error) {
-      console.error('Product operation failed:', error)
       if (error.message.includes('Authentication')) {
         alert('Please log in to manage products')
       } else {

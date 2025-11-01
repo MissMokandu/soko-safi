@@ -8,7 +8,6 @@ from flask import Blueprint, request, jsonify
 from app.models import db, ArtisanShowcaseMedia, ArtisanSocial, User, Product
 # Removed problematic auth imports
 
-artisan_bp = Blueprint('artisan_bp', __name__)
 artisan_api = Api(artisan_bp)
 
 class ArtisanShowcaseMediaListResource(Resource):
@@ -243,8 +242,6 @@ class ArtisanDashboardResource(Resource):
             error_trace = traceback.format_exc()
             current_app.logger.error(f"Dashboard error: {e}")
             current_app.logger.error(f"Full traceback: {error_trace}")
-            print(f"Dashboard error: {e}")
-            print(f"Full traceback: {error_trace}")
             
             return {
                 'stats': {
@@ -262,7 +259,6 @@ class ArtisanOrdersResource(Resource):
         try:
             return []
         except Exception as e:
-            print(f"Orders error: {e}")
             return []
 
 class ArtisanMessagesResource(Resource):
@@ -271,7 +267,6 @@ class ArtisanMessagesResource(Resource):
         try:
             return []
         except Exception as e:
-            print(f"Messages error: {e}")
             return []
 
 class ArtisanProfileResource(Resource):

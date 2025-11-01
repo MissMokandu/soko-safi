@@ -55,7 +55,6 @@ const ArtisanProfilePage = () => {
         avatar: artisanData.profile_picture_url || ''
       });
     } catch (error) {
-      console.error('Failed to fetch artisan data:', error);
     } finally {
       setLoading(false);
     }
@@ -72,7 +71,6 @@ const ArtisanProfilePage = () => {
         await api.profile.update({ profile_picture_url: imageUrl });
         setArtisan(prev => ({ ...prev, profile_picture_url: imageUrl }));
       } catch (error) {
-        console.error('Failed to upload avatar:', error);
         alert('Failed to upload image. Please try again.');
       } finally {
         setUploading(false);
@@ -94,7 +92,6 @@ const ArtisanProfilePage = () => {
       setIsEditing(false);
       alert('Profile updated successfully!');
     } catch (error) {
-      console.error('Failed to update profile:', error);
       alert('Failed to update profile. Please try again.');
     }
   };

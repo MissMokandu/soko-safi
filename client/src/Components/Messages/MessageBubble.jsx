@@ -4,7 +4,6 @@ const MessageBubble = ({ message }) => {
   // Get the message text from any available property
   const messageText = message.text || message.message_text || message.message || 'No text found'
   
-  console.log('Rendering message text:', messageText)
   
   return (
     <div className={`flex mb-4 ${message.sender === 'buyer' ? 'justify-end' : 'justify-start'}`}>

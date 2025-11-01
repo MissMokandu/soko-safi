@@ -86,7 +86,6 @@ const CheckoutPage = ({ authLoading = false }) => {
         phone_number: paymentInfo.phoneNumber
       }
       
-      console.log('Initiating M-Pesa payment...', paymentData)
       
       try {
         const response = await api.payments.mpesa.stkPush(paymentData)
@@ -98,13 +97,11 @@ const CheckoutPage = ({ authLoading = false }) => {
           throw new Error(response?.error || 'Payment initiation failed')
         }
       } catch (apiError) {
-        console.warn('M-Pesa API not available, simulating payment for demo')
         alert('Demo mode: Payment request sent to your phone. Please complete the payment.')
         setStep(3)
       }
       
     } catch (error) {
-      console.error('Payment failed:', error)
       alert(`Payment failed: ${error.message}. Please try again.`)
     } finally {
       setProcessing(false)
