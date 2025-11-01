@@ -21,6 +21,7 @@ const ArtisanDashboard = () => {
   const [profileLoading, setProfileLoading] = useState(false)
 
   const [showAddProduct, setShowAddProduct] = useState(false)
+  const [editingProduct, setEditingProduct] = useState(null)
   const [dragActive, setDragActive] = useState(false)
   const [uploadedImage, setUploadedImage] = useState(null)
   const [formData, setFormData] = useState({
@@ -162,14 +163,14 @@ const ArtisanDashboard = () => {
     if (file) {
       try {
         setProfileLoading(true)
-        const uploadResult = await api.profile.uploadImage(file)
+        const imageUrl = await uploadToCloudinary(file)
         setProfileData(prev => ({
           ...prev,
-          profile_picture_url: uploadResult.url
+          profile_picture_url: imageUrl
         }))
         // Update profile with new picture URL
         await api.profile.update({
-          profile_picture_url: uploadResult.url
+          profile_picture_url: imageUrl
         })
         alert('Profile picture updated successfully!')
       } catch (error) {
@@ -228,6 +229,19 @@ const ArtisanDashboard = () => {
     })
   }
 
+  const handleEdit = (product) => {
+    setEditingProduct(product)
+    setFormData({
+      title: product.title,
+      category: product.category || '',
+      subcategory: product.subcategory || '',
+      description: product.description,
+      price: product.price.toString()
+    })
+    setUploadedImage(product.image_url || product.image)
+    setShowAddProduct(true)
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     
@@ -237,19 +251,19 @@ const ArtisanDashboard = () => {
       // Check authentication first
       const session = await api.auth.getSession()
       if (!session.authenticated) {
-        alert('Please log in to add products')
+        alert('Please log in to manage products')
         return
       }
       
-      let imageUrl = null
+      let imageUrl = uploadedImage
       
-      // Upload image to Cloudinary if selected
+      // Upload new image to Cloudinary if selected
       if (selectedFile) {
         try {
           imageUrl = await uploadToCloudinary(selectedFile)
         } catch (error) {
           console.error('Image upload failed:', error)
-          alert('Image upload failed, but product will be created without image')
+          alert('Image upload failed, but product will be saved without new image')
         }
       }
       
@@ -264,27 +278,35 @@ const ArtisanDashboard = () => {
         currency: 'KSH'
       }
 
-      // Add image URL if uploaded
+      // Add image URL if available
       if (imageUrl) {
         productData.image = imageUrl
       }
 
-      console.log('Creating product with data:', productData)
-      await api.products.create(productData)
+      if (editingProduct) {
+        console.log('Updating product with data:', productData)
+        await api.products.update(editingProduct.id, productData)
+        alert('Product updated successfully!')
+      } else {
+        console.log('Creating product with data:', productData)
+        await api.products.create(productData)
+        alert('Product added successfully!')
+      }
+      
       await loadProducts() // Reload products
       
       setShowAddProduct(false)
+      setEditingProduct(null)
       setFormData({ title: '', category: '', subcategory: '', description: '', price: '' })
       setUploadedImage(null)
       setSelectedFile(null)
       
-      alert('Product added successfully!')
     } catch (error) {
-      console.error('Product creation failed:', error)
+      console.error('Product operation failed:', error)
       if (error.message.includes('Authentication')) {
-        alert('Please log in to add products')
+        alert('Please log in to manage products')
       } else {
-        alert('Failed to add product: ' + error.message)
+        alert(`Failed to ${editingProduct ? 'update' : 'add'} product: ` + error.message)
       }
     } finally {
       setLoading(false)
@@ -358,10 +380,9 @@ const ArtisanDashboard = () => {
                 <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
                   {profileData.profile_picture_url ? (
                     <img
-                      src={profileData.profile_picture_url.startsWith('http') ? profileData.profile_picture_url : ''}
+                      src={profileData.profile_picture_url}
                       alt="Profile"
                       className="w-full h-full object-cover"
-                      onError={(e) => { e.target.style.display = 'none'; }}
                     />
                   ) : (
                     <User className="w-5 h-5 text-white" />
@@ -525,7 +546,7 @@ const ArtisanDashboard = () => {
                           <div className="flex items-start space-x-4 mb-4">
                             <div className="relative">
                               <img
-                                src={product.image}
+                                src={product.image_url || product.image}
                                 alt={product.title}
                                 className="w-24 h-24 rounded-xl object-cover shadow-md"
                               />
@@ -545,7 +566,10 @@ const ArtisanDashboard = () => {
                             </div>
                           </div>
                           <div className="flex items-center space-x-3 pt-4 border-t border-gray-100">
-                            <button className="flex-1 bg-gray-100 text-gray-700 font-semibold py-3 px-4 rounded-xl hover:bg-gray-200 transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2">
+                            <button 
+                              onClick={() => handleEdit(product)}
+                              className="flex-1 bg-gray-100 text-gray-700 font-semibold py-3 px-4 rounded-xl hover:bg-gray-200 transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2"
+                            >
                               <span>Edit</span>
                             </button>
                             <button
@@ -575,10 +599,16 @@ const ArtisanDashboard = () => {
               <>
                 <div className="flex items-center justify-between mb-8">
                   <h1 className="text-3xl font-bold text-gray-900">
-                    Add New Product
+                    {editingProduct ? 'Edit Product' : 'Add New Product'}
                   </h1>
                   <button
-                    onClick={() => setShowAddProduct(false)}
+                    onClick={() => {
+                      setShowAddProduct(false)
+                      setEditingProduct(null)
+                      setFormData({ title: '', category: '', subcategory: '', description: '', price: '' })
+                      setUploadedImage(null)
+                      setSelectedFile(null)
+                    }}
                     className="btn-secondary px-4 py-2"
                   >
                     Cancel
@@ -744,17 +774,33 @@ const ArtisanDashboard = () => {
                   <div className="flex justify-end space-x-4 pt-6 border-t border-gray-100">
                     <button
                       type="button"
-                      onClick={() => setShowAddProduct(false)}
+                      onClick={() => {
+                        setShowAddProduct(false)
+                        setEditingProduct(null)
+                        setFormData({ title: '', category: '', subcategory: '', description: '', price: '' })
+                        setUploadedImage(null)
+                        setSelectedFile(null)
+                      }}
                       className="px-8 py-4 text-gray-700 font-semibold rounded-xl border-2 border-gray-200 hover:bg-gray-50 transition-all duration-200"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold px-8 py-4 rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
+                      disabled={loading}
+                      className="bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold px-8 py-4 rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Plus className="w-5 h-5" />
-                      <span>Submit Product</span>
+                      {loading ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>{editingProduct ? 'Updating...' : 'Creating...'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-5 h-5" />
+                          <span>{editingProduct ? 'Update Product' : 'Submit Product'}</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </form>

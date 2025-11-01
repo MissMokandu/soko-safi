@@ -1,15 +1,119 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Star, MapPin, MessageSquare, Award, Package } from "lucide-react";
+import { Star, MapPin, MessageSquare, Award, Package, Camera, Edit } from "lucide-react";
 import Navbar from "../Components/Layout/Navbar";
 import Footer from "../Components/Layout/Footer";
+import { api } from '../services/api';
+import { uploadToCloudinary } from '../services/cloudinary';
+import { useAuth } from '../context/AuthContext';
 
 const ArtisanProfilePage = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("products");
+  const [artisan, setArtisan] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [editData, setEditData] = useState({
+    bio: '',
+    location: '',
+    avatar: ''
+  });
 
-  // Mock artisan data
-  const artisan = {
+  const isOwner = user && user.id === id;
+
+  useEffect(() => {
+    fetchArtisanData();
+  }, [id]);
+
+  const fetchArtisanData = async () => {
+    try {
+      setLoading(true);
+      const [artisanData, productsData] = await Promise.all([
+        api.users.getById(id),
+        api.artisan.getProducts(id)
+      ]);
+      setArtisan(artisanData);
+      setProducts(productsData);
+      setEditData({
+        bio: artisanData.description || '',
+        location: artisanData.location || '',
+        avatar: artisanData.profile_picture_url || ''
+      });
+    } catch (error) {
+      console.error('Failed to fetch artisan data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (file && isOwner) {
+      try {
+        setUploading(true);
+        const imageUrl = await uploadToCloudinary(file);
+        setEditData(prev => ({ ...prev, avatar: imageUrl }));
+        // Auto-save avatar
+        await api.users.update(id, { profile_picture_url: imageUrl });
+        setArtisan(prev => ({ ...prev, profile_picture_url: imageUrl }));
+      } catch (error) {
+        console.error('Failed to upload avatar:', error);
+        alert('Failed to upload image. Please try again.');
+      } finally {
+        setUploading(false);
+      }
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      await api.users.update(id, {
+        description: editData.bio,
+        location: editData.location
+      });
+      setArtisan(prev => ({
+        ...prev,
+        description: editData.bio,
+        location: editData.location
+      }));
+      setIsEditing(false);
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      alert('Failed to update profile. Please try again.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading artisan profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!artisan) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Artisan Not Found</h2>
+          <p className="text-gray-600 mb-6">The artisan profile you're looking for doesn't exist.</p>
+          <Link to="/explore" className="btn-primary">
+            Browse Artisans
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Use real data instead of mock
+  const mockArtisan = {
     id: id,
     name: "Sarah Johnson",
     avatar:
@@ -114,14 +218,33 @@ const ArtisanProfilePage = () => {
           <div className="relative -mt-20 mb-8">
             <div className="bg-white rounded-2xl shadow-sm p-8">
               <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
-                <img
-                  src={artisan.avatar}
-                  alt={artisan.name}
-                  className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover"
-                />
+                <div className="relative">
+                  <img
+                    src={artisan.profile_picture_url || editData.avatar || '/images/placeholder-avatar.jpg'}
+                    alt={artisan.full_name}
+                    className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover"
+                  />
+                  {isOwner && (
+                    <label className="absolute bottom-2 right-2 bg-primary text-white p-2 rounded-full cursor-pointer hover:bg-primary-600 transition-colors shadow-lg">
+                      <Camera className="w-4 h-4" />
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        disabled={uploading}
+                      />
+                    </label>
+                  )}
+                  {uploading && (
+                    <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                </div>
                 <div className="flex-1">
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                    {artisan.name}
+                    {artisan.full_name}
                   </h1>
                   <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-4">
                     <div className="flex items-center space-x-1">
@@ -130,7 +253,7 @@ const ArtisanProfilePage = () => {
                     </div>
                     <div className="flex items-center space-x-1">
                       <Award className="w-4 h-4" />
-                      <span>Member since {artisan.memberSince}</span>
+                      <span>Member since {new Date(artisan.created_at).getFullYear()}</span>
                     </div>
                   </div>
                   <div className="flex items-center space-x-6 mb-4">
@@ -140,42 +263,57 @@ const ArtisanProfilePage = () => {
                           <Star
                             key={i}
                             className={`w-5 h-5 ${
-                              i < Math.floor(artisan.rating)
+                              i < Math.floor(4.5)
                                 ? "text-yellow-400 fill-current"
                                 : "text-gray-300"
                             }`}
                           />
                         ))}
                       </div>
-                      <span className="font-medium">{artisan.rating}</span>
+                      <span className="font-medium">4.5</span>
                       <span className="text-gray-600">
-                        ({artisan.totalReviews} reviews)
+                        (0 reviews)
                       </span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Package className="w-5 h-5 text-gray-600" />
-                      <span className="font-medium">{artisan.totalSales}</span>
+                      <span className="font-medium">{products.length}</span>
                       <span className="text-gray-600">sales</span>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {artisan.specialties.map((specialty, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium"
-                      >
-                        {specialty}
-                      </span>
-                    ))}
+                    <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                      Artisan
+                    </span>
                   </div>
                 </div>
-                <Link
-                  to={`/messages/${artisan.id}`}
-                  className="btn-primary px-6 py-3 flex items-center space-x-2"
-                >
-                  <MessageSquare className="w-5 h-5" />
-                  <span>Contact Artisan</span>
-                </Link>
+                <div className="flex space-x-3">
+                  {isOwner ? (
+                    <button
+                      onClick={() => isEditing ? handleSaveProfile() : setIsEditing(true)}
+                      className="btn-primary px-6 py-3 flex items-center space-x-2"
+                    >
+                      <Edit className="w-5 h-5" />
+                      <span>{isEditing ? 'Save Changes' : 'Edit Profile'}</span>
+                    </button>
+                  ) : (
+                    <Link
+                      to={`/messages/${artisan.id}`}
+                      className="btn-primary px-6 py-3 flex items-center space-x-2"
+                    >
+                      <MessageSquare className="w-5 h-5" />
+                      <span>Contact Artisan</span>
+                    </Link>
+                  )}
+                  {isEditing && (
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className="btn-secondary px-6 py-3"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -183,7 +321,32 @@ const ArtisanProfilePage = () => {
           {/* About Section */}
           <div className="bg-white rounded-2xl shadow-sm p-8 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">About</h2>
-            <p className="text-gray-700 leading-relaxed">{artisan.bio}</p>
+            {isEditing ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                  <textarea
+                    value={editData.bio}
+                    onChange={(e) => setEditData(prev => ({ ...prev, bio: e.target.value }))}
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder="Tell people about yourself and your craft..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                  <input
+                    type="text"
+                    value={editData.location}
+                    onChange={(e) => setEditData(prev => ({ ...prev, location: e.target.value }))}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder="e.g., Nairobi, Kenya"
+                  />
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-700 leading-relaxed">{artisan.description || 'No description available.'}</p>
+            )}
           </div>
 
           {/* Tabs */}
@@ -198,7 +361,7 @@ const ArtisanProfilePage = () => {
                       : "border-transparent text-gray-600 hover:text-gray-900"
                   }`}
                 >
-                  Products ({artisan.products.length})
+                  Products ({products.length})
                 </button>
                 <button
                   onClick={() => setActiveTab("reviews")}
@@ -208,7 +371,7 @@ const ArtisanProfilePage = () => {
                       : "border-transparent text-gray-600 hover:text-gray-900"
                   }`}
                 >
-                  Reviews ({artisan.reviews.length})
+                  Reviews (0)
                 </button>
               </div>
             </div>
@@ -217,7 +380,7 @@ const ArtisanProfilePage = () => {
               {/* Products Tab */}
               {activeTab === "products" && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {artisan.products.map((product) => (
+                  {products.map((product) => (
                     <Link
                       key={product.id}
                       to={`/product/${product.id}`}
@@ -226,7 +389,7 @@ const ArtisanProfilePage = () => {
                       <div className="bg-gray-50 rounded-xl overflow-hidden hover:shadow-lg transition-shadow">
                         <div className="aspect-square overflow-hidden">
                           <img
-                            src={product.image}
+                            src={product.image_url || product.image}
                             alt={product.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
@@ -237,10 +400,10 @@ const ArtisanProfilePage = () => {
                           </h3>
                           <div className="flex items-center justify-between">
                             <span className="text-lg font-bold text-gray-900">
-                              ${product.price.toFixed(2)}
+                              KSH {product.price.toFixed(2)}
                             </span>
                             <span className="text-sm text-gray-600">
-                              {product.sales} sold
+                              In Stock
                             </span>
                           </div>
                         </div>
@@ -252,42 +415,12 @@ const ArtisanProfilePage = () => {
 
               {/* Reviews Tab */}
               {activeTab === "reviews" && (
-                <div className="space-y-6">
-                  {artisan.reviews.map((review) => (
-                    <div
-                      key={review.id}
-                      className="border-b border-gray-200 pb-6 last:border-0"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <div className="flex items-center space-x-3 mb-2">
-                            <p className="font-bold text-gray-900">
-                              {review.user}
-                            </p>
-                            <div className="flex">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`w-4 h-4 ${
-                                    i < review.rating
-                                      ? "text-yellow-400 fill-current"
-                                      : "text-gray-300"
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                          <p className="text-sm text-gray-600 mb-2">
-                            Purchased: {review.product}
-                          </p>
-                        </div>
-                        <span className="text-sm text-gray-500">
-                          {review.date}
-                        </span>
-                      </div>
-                      <p className="text-gray-700">{review.comment}</p>
-                    </div>
-                  ))}
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Star className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Reviews Yet</h3>
+                  <p className="text-gray-600">This artisan hasn't received any reviews yet.</p>
                 </div>
               )}
             </div>
