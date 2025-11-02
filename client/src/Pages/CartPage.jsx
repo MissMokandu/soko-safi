@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../hooks/useCart.jsx";
 import { useAuth } from "../context/AuthContext";
-import CartLayout from "./Cart/CartLayout";
+import BuyerLayout from "./Buyer/BuyerLayout";
 import CartItemCard from "./Cart/CartItemCard";
 import OrderSummary from "./Cart/OrderSummary";
 import EmptyCart from "./Cart/EmptyCart";
@@ -86,8 +86,13 @@ const CartPage = ({ authLoading = false }) => {
     );
   }
 
+  const handleTabChange = (tab) => {
+    navigate(`/buyer-dashboard?tab=${tab}`);
+  };
+
   return (
-    <CartLayout>
+    <BuyerLayout activeTab="orders" setActiveTab={handleTabChange}>
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">Shopping Cart</h1>
       {(loading || authLoading) ? (
         <CartSkeleton />
       ) : cartItems.length === 0 ? (
@@ -117,7 +122,7 @@ const CartPage = ({ authLoading = false }) => {
           </div>
         </div>
       )}
-    </CartLayout>
+    </BuyerLayout>
   );
 };
 
