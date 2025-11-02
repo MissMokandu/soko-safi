@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+upload_bp = Blueprint('upload_bp', __name__)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
