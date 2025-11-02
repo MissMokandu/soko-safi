@@ -44,22 +44,31 @@ const LoginPage = () => {
     try {
       clearError(); // Clear any previous auth errors
       const result = await login(formData)
-      
+      console.log('[LOGIN_PAGE] Login result:', result)
       
       // Get the intended destination from location state or default based on role
       const from = location.state?.from?.pathname
       const userRole = result.user?.role || 'buyer'
+      console.log('[LOGIN_PAGE] User role:', userRole, 'From:', from)
+      
+      // Small delay to ensure auth context is updated
+      await new Promise(resolve => setTimeout(resolve, 100))
       
       if (from && from !== '/login') {
+        console.log('[LOGIN_PAGE] Navigating to from:', from)
         navigate(from, { replace: true })
       } else if (userRole === 'artisan') {
+        console.log('[LOGIN_PAGE] Navigating to artisan dashboard')
         navigate('/artisan-dashboard', { replace: true })
       } else if (userRole === 'admin') {
+        console.log('[LOGIN_PAGE] Navigating to admin dashboard')
         navigate('/admin-dashboard', { replace: true })
       } else {
+        console.log('[LOGIN_PAGE] Navigating to buyer dashboard')
         navigate('/buyer-dashboard', { replace: true })
       }
     } catch (error) {
+      console.error('[LOGIN_PAGE] Login error:', error)
       setErrors({ general: error.message || 'Login failed. Please check your credentials and try again.' })
     } finally {
       setIsLoading(false)
