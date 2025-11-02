@@ -331,23 +331,37 @@ class CheckSession(Resource):
     
     def get(self):
         """Get current session info"""
-        user = User.query.filter(User.id == session.get('user_id')).first()
-        if user:
-            return {
-                'authenticated': True,
-                'user': {
-                    'id': user.id,
-                    'email': user.email,
-                    'full_name': user.full_name,
-                    'role': user.role.value,
-                    'is_verified': user.is_verified
-                }
-            }, 200
-        else:
+        try:
+            user_id = session.get('user_id')
+            if not user_id:
+                return {
+                    'authenticated': False,
+                    'message': '401: Not Authorized'
+                }, 401
+            
+            user = User.query.filter(User.id == user_id).first()
+            if user:
+                return {
+                    'authenticated': True,
+                    'user': {
+                        'id': user.id,
+                        'email': user.email,
+                        'full_name': user.full_name,
+                        'role': user.role.value,
+                        'is_verified': user.is_verified
+                    }
+                }, 200
+            else:
+                return {
+                    'authenticated': False,
+                    'message': '401: Not Authorized'
+                }, 401
+        except Exception as e:
             return {
                 'authenticated': False,
-                'message': '401: Not Authorized'
-            }, 401
+                'error': 'Session check failed',
+                'message': 'An error occurred while checking session'
+            }, 500
 
 class ResetPasswordResource(Resource):
     """Handle password reset requests"""
