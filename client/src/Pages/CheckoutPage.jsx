@@ -125,7 +125,7 @@ const CheckoutPage = ({ authLoading = false }) => {
   }
 
   return (
-    <BuyerLayout activeTab="checkout" setActiveTab={() => {}}>
+    <BuyerLayout activeTab="orders" setActiveTab={() => {}}>
 
         {(loading || authLoading) ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
