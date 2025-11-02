@@ -156,7 +156,10 @@ class LoginResource(Resource):
                 }, 401
             
             # Log in the user
+            print(f"[LOGIN] Before login_user - Session: {dict(session)}")
             login_user(user.id, user.role.value)
+            print(f"[LOGIN] After login_user - Session: {dict(session)}")
+            print(f"[LOGIN] Session ID: {session.sid if hasattr(session, 'sid') else 'No SID'}")
             
             return {
                 'message': 'Login successful',
@@ -326,20 +329,29 @@ class ChangePasswordResource(Resource):
                 'message': 'An error occurred while changing password'
             }, 500
 
-class CheckSession(Resource):
+class CheckSessionResource(Resource):
     """Handle session information"""
     
     def get(self):
         """Get current session info"""
         try:
+            print(f"[CHECK_SESSION] Full session data: {dict(session)}")
+            print(f"[CHECK_SESSION] Session keys: {list(session.keys())}")
+            print(f"[CHECK_SESSION] Request headers: {dict(request.headers)}")
+            print(f"[CHECK_SESSION] Request cookies: {dict(request.cookies)}")
+            
             user_id = session.get('user_id')
+            print(f"[CHECK_SESSION] Retrieved user_id: {user_id}")
+            
             if not user_id:
+                print(f"[CHECK_SESSION] No user_id found, returning unauthenticated")
                 return {
                     'authenticated': False
                 }, 200
             
             user = User.query.filter(User.id == user_id).first()
             if user:
+                print(f"[CHECK_SESSION] User found: {user.email}, returning authenticated")
                 return {
                     'authenticated': True,
                     'user': {
@@ -351,10 +363,12 @@ class CheckSession(Resource):
                     }
                 }, 200
             else:
+                print(f"[CHECK_SESSION] User not found in database, returning unauthenticated")
                 return {
                     'authenticated': False
                 }, 200
         except Exception as e:
+            print(f"[CHECK_SESSION] Exception occurred: {str(e)}")
             return {
                 'authenticated': False,
                 'error': 'Session check failed'
@@ -381,9 +395,9 @@ class ResetPasswordResource(Resource):
             
             # Always return success to prevent email enumeration
             if user:
-                # In a real app, you would send an email with reset token
-                # For now, just log it or implement basic reset
-                pass
+                # TODO: In production, implement email-based password reset
+                # For now, we just acknowledge the request
+                print(f"[PASSWORD_RESET] Reset requested for user: {user.email}")
             
             return {
                 'message': 'If an account with that email exists, a password reset link has been sent'
@@ -401,5 +415,5 @@ auth_api.add_resource(LoginResource, '/login')
 auth_api.add_resource(LogoutResource, '/logout')
 auth_api.add_resource(ProfileResource, '/profile')
 auth_api.add_resource(ChangePasswordResource, '/change-password')
-auth_api.add_resource(CheckSession, '/check_session')
+auth_api.add_resource(CheckSessionResource, '/check_session')
 auth_api.add_resource(ResetPasswordResource, '/reset-password')

@@ -44,15 +44,23 @@ def login_user(user_id: str, role: str) -> None:
         user_id (str): User's unique identifier
         role (str): User's role (buyer, artisan, admin)
     """
+    print(f"[LOGIN_USER] Setting session for user_id: {user_id}, role: {role}")
+    print(f"[LOGIN_USER] Session before: {dict(session)}")
+    
     session['user_id'] = user_id
     session['user_role'] = role
     session['authenticated'] = True
+    
+    print(f"[LOGIN_USER] Session after: {dict(session)}")
+    print(f"[LOGIN_USER] Session modified: {session.modified}")
 
 def logout_user() -> None:
     """
     Clear user session
     """
+    print(f"[LOGOUT_USER] Session before clear: {dict(session)}")
     session.clear()
+    print(f"[LOGOUT_USER] Session after clear: {dict(session)}")
 
 def get_current_user() -> dict:
     """
