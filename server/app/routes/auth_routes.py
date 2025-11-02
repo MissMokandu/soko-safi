@@ -396,7 +396,7 @@ class ResetPasswordResource(Resource):
             # Always return success to prevent email enumeration
             if user:
                 # TODO: In production, implement email-based password reset
-                # For now, we just acknowledge the request
+            
                 print(f"[PASSWORD_RESET] Reset requested for user: {user.email}")
             
             return {

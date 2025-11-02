@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Edit3, Save, X, Camera, User, CheckCircle } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import DashboardNavbar from '../Components/Layout/DashboardNavbar'
 import BuyerSidebar from '../Components/Layout/BuyerSidebar'
 import ArtisanSidebar from '../Components/Layout/ArtisanSidebar'
@@ -8,6 +9,7 @@ import { api } from '../services/api'
 
 const ProfilePage = ({ authLoading = false }) => {
   const { user, updateUser, isArtisan } = useAuth()
+  const navigate = useNavigate()
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
@@ -84,13 +86,13 @@ const ProfilePage = ({ authLoading = false }) => {
         {isArtisan ? (
           <ArtisanSidebar activeTab="profile" setActiveTab={(tab) => {
             if (tab !== 'profile') {
-              window.location.href = '/artisan-dashboard?tab=' + tab
+              navigate(`/artisan-dashboard?tab=${tab}`)
             }
           }} />
         ) : (
           <BuyerSidebar activeTab="profile" setActiveTab={(tab) => {
             if (tab !== 'profile') {
-              window.location.href = '/buyer-dashboard?tab=' + tab
+              navigate(`/buyer-dashboard?tab=${tab}`)
             }
           }} />
         )}

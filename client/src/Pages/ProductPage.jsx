@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Heart, ShoppingCart, Star, MapPin, ArrowLeft, MessageSquare, Share2 } from 'lucide-react'
 import Navbar from '../Components/Layout/Navbar'
 import Footer from '../Components/Layout/Footer'
@@ -10,6 +10,7 @@ import { isUserAuthenticated } from '../utils/navigation'
 
 const ProductPage = () => {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -44,7 +45,7 @@ const ProductPage = () => {
   const handleAddToCart = () => {
     if (!isUserAuthenticated()) {
       // Redirect to login
-      window.location.href = '/login'
+      navigate('/login')
       return
     }
     // Add to cart logic for authenticated users
@@ -53,7 +54,7 @@ const ProductPage = () => {
   const handleAddToFavorites = () => {
     if (!isUserAuthenticated()) {
       // Redirect to login
-      window.location.href = '/login'
+      navigate('/login')
       return
     }
     // Add to favorites logic for authenticated users

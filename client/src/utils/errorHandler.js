@@ -34,11 +34,10 @@ export const handleAuthError = (error, context = '') => {
     logError(error, `AUTH_ERROR: ${context}`)
     if (error?.status === 401 || error?.message?.includes('token') || error?.message?.includes('auth')) {
       clearToken()
-      // Use replace to prevent back button issues
-      window.location.replace('/login')
+      // Don't redirect here - let the component handle it
+      console.warn('Authentication error detected:', error.message)
     }
   } catch (handlingError) {
-    // Fallback: still try to redirect
-    window.location.replace('/login')
+    console.warn('Error handling auth error:', handlingError)
   }
 }

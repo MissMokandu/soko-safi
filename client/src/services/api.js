@@ -154,6 +154,17 @@ export const api = {
         return { authenticated: false };
       }
     },
+    getSession: async () => {
+      try {
+        console.log('[AUTH_SESSION] Getting session');
+        const result = await apiRequest("/auth/check_session");
+        console.log('[AUTH_SESSION] Session result:', result);
+        return result;
+      } catch (error) {
+        console.error('[AUTH_SESSION] Session check failed:', error);
+        return { authenticated: false };
+      }
+    },
     getProfile: async () => {
       try {
         console.log('[AUTH_PROFILE] Getting profile');
