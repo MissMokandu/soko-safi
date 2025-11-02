@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Diamond, User, Settings, LogOut, ChevronDown } from 'lucide-react'
 import { api } from '../services/api'
 import { uploadToCloudinary } from '../services/cloudinary'
@@ -14,6 +14,7 @@ import ProfileModal from './Artisan/Components/ProfileModal'
 
 const ArtisanDashboard = ({ authLoading = false }) => {
   const { user, isAuthenticated, isArtisan, logout } = useAuth()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('dashboard')
   const [showProfileSettings, setShowProfileSettings] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -333,13 +334,12 @@ const ArtisanDashboard = ({ authLoading = false }) => {
 
   // Show role mismatch if user is not an artisan (only when not loading)
   if (!authLoading && user && !isArtisan) {
-    window.location.href = '/buyer-dashboard'
+    navigate('/buyer-dashboard', { replace: true })
     return null
   }
 
   if (!authLoading && !isAuthenticated) {
-    const { redirectToLogin } = require('../utils/auth')
-    redirectToLogin()
+    navigate('/login', { replace: true })
     return null
   }
 

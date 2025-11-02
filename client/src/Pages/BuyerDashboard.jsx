@@ -268,13 +268,12 @@ const BuyerDashboard = ({ authLoading = false }) => {
 
   // Show role mismatch if user is not a buyer (only when not loading)
   if (!authLoading && user && !isBuyer) {
-    window.location.href = "/artisan-dashboard";
+    navigate('/artisan-dashboard', { replace: true });
     return null;
   }
 
   if (!authLoading && !isAuthenticated) {
-    const { redirectToLogin } = require("../utils/auth");
-    redirectToLogin();
+    navigate('/login', { replace: true });
     return null;
   }
 
