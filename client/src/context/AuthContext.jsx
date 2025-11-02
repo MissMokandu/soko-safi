@@ -21,14 +21,17 @@ export const AuthProvider = ({ children }) => {
       console.log('[AUTH_CONTEXT] Session check result:', data);
       
       if (data?.authenticated && data?.user) {
+        console.log('[AUTH_CONTEXT] User authenticated, setting user');
         setUser(data.user);
       } else {
+        console.log('[AUTH_CONTEXT] User not authenticated, clearing user');
         setUser(null);
       }
     } catch (error) {
       console.error('[AUTH_CONTEXT] Session check failed:', error);
       setUser(null);
     } finally {
+      console.log('[AUTH_CONTEXT] Setting loading to false');
       setLoading(false);
     }
   };
@@ -37,12 +40,12 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('[AUTH_CONTEXT] Starting login process');
       setError(null);
-      setLoading(true);
       
       const data = await api.auth.login(credentials);
       console.log('[AUTH_CONTEXT] Login response:', data);
       
       if (data.user) {
+        console.log('[AUTH_CONTEXT] Login successful, setting user');
         setUser(data.user);
       }
       
@@ -51,8 +54,6 @@ export const AuthProvider = ({ children }) => {
       console.error('[AUTH_CONTEXT] Login error:', error);
       setError(error.message);
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
