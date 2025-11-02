@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Smartphone, Lock, CheckCircle, Loader } from 'lucide-react'
-import DashboardNavbar from '../Components/Layout/DashboardNavbar'
-import BuyerSidebar from '../Components/Layout/BuyerSidebar'
+import { CheckCircle } from 'lucide-react'
+import BuyerLayout from './Buyer/BuyerLayout'
 import { useCart } from '../hooks/useCart.jsx'
 import { api } from '../services/api'
 
@@ -126,12 +125,7 @@ const CheckoutPage = ({ authLoading = false }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <DashboardNavbar />
-      <div className="flex flex-col lg:flex-row">
-        <BuyerSidebar />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 animate-fade-in">
-          <div className="max-w-7xl mx-auto">
+    <BuyerLayout activeTab="checkout" setActiveTab={() => {}}>
 
         {(loading || authLoading) ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
@@ -354,10 +348,7 @@ const CheckoutPage = ({ authLoading = false }) => {
             </div>
           </div>
         )}
-          </div>
-        </main>
-      </div>
-    </div>
+    </BuyerLayout>
   )
 }
 
