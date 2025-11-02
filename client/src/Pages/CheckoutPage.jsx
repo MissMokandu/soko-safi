@@ -7,6 +7,10 @@ import { api } from '../services/api'
 
 const CheckoutPage = ({ authLoading = false }) => {
   const navigate = useNavigate()
+  
+  const handleTabChange = (tab) => {
+    navigate(`/buyer-dashboard?tab=${tab}`)
+  }
   const { cartItems, loading, clearCart } = useCart()
   const [step, setStep] = useState(1) // 1: Shipping, 2: Payment, 3: Confirmation
   const [processing, setProcessing] = useState(false)
@@ -125,7 +129,7 @@ const CheckoutPage = ({ authLoading = false }) => {
   }
 
   return (
-    <BuyerLayout activeTab="orders" setActiveTab={() => {}}>
+    <BuyerLayout activeTab="orders" setActiveTab={handleTabChange}>
 
         {(loading || authLoading) ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
