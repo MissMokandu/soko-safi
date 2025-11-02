@@ -21,7 +21,6 @@ const BuyerSidebar = ({ activeTab, setActiveTab }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const isCartPage = location.pathname === "/cart";
   const isMessagesPage = location.pathname.startsWith("/messages-new");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -103,7 +102,7 @@ const BuyerSidebar = ({ activeTab, setActiveTab }) => {
           </div>
         </div>
         <nav className="space-y-3">
-          {isCartPage || isMessagesPage ? (
+          {isMessagesPage ? (
             <>
               <Link
                 to="/buyer-dashboard"
@@ -125,27 +124,14 @@ const BuyerSidebar = ({ activeTab, setActiveTab }) => {
                   <span className="font-semibold text-lg">My Orders</span>
                 )}
               </Link>
-              {isMessagesPage ? (
-                <div
-                  className={`w-full flex items-center ${isCollapsed ? "justify-center px-3" : "space-x-4 px-5"} py-4 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg transform scale-[1.02]`}
-                >
-                  <MessageSquare className="w-6 h-6 flex-shrink-0 text-white" />
-                  {!isCollapsed && (
-                    <span className="font-semibold text-lg">Messages</span>
-                  )}
-                </div>
-              ) : (
-                <Link
-                  to="/messages-new"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`w-full flex items-center ${isCollapsed ? "justify-center px-3" : "space-x-4 px-5"} py-4 rounded-xl transition-all duration-200 whitespace-nowrap group text-gray-700 hover:bg-white hover:shadow-md hover:transform hover:scale-[1.01]`}
-                >
-                  <MessageSquare className="w-6 h-6 flex-shrink-0 text-primary-600 group-hover:text-primary-700" />
-                  {(!isCollapsed || isMobileMenuOpen) && (
-                    <span className="font-semibold text-lg">Messages</span>
-                  )}
-                </Link>
-              )}
+              <div
+                className={`w-full flex items-center ${isCollapsed ? "justify-center px-3" : "space-x-4 px-5"} py-4 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg transform scale-[1.02]`}
+              >
+                <MessageSquare className="w-6 h-6 flex-shrink-0 text-white" />
+                {!isCollapsed && (
+                  <span className="font-semibold text-lg">Messages</span>
+                )}
+              </div>
               <Link
                 to="/buyer-dashboard"
                 onClick={() => setIsMobileMenuOpen(false)}
