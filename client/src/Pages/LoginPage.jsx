@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import React from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Diamond, Eye, EyeOff, Mail, Lock, ArrowRight, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -7,7 +8,22 @@ import LoadingSpinner from '../Components/LoadingSpinner'
 const LoginPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { login, loading: authLoading, error: authError, clearError } = useAuth()
+  const { user, login, loading: authLoading, error: authError, clearError } = useAuth()
+  
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (user && !authLoading) {
+      console.log('[LOGIN_PAGE] User already logged in, redirecting...', user)
+      const userRole = user.role || 'buyer'
+      if (userRole === 'artisan') {
+        navigate('/artisan-dashboard', { replace: true })
+      } else if (userRole === 'admin') {
+        navigate('/admin-dashboard', { replace: true })
+      } else {
+        navigate('/buyer-dashboard', { replace: true })
+      }
+    }
+  }, [user, authLoading, navigate])
   const [formData, setFormData] = useState({
     email: '',
     password: ''
