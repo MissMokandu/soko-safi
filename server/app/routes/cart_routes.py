@@ -6,12 +6,13 @@ Handles CRUD operations for carts and cart items
 from flask_restful import Resource, Api
 from flask import Blueprint, request
 from app.models import db, Cart, CartItem
-# Removed problematic auth imports
+from app.auth import require_auth, require_role
 
 cart_bp = Blueprint('cart_bp', __name__)
 cart_api = Api(cart_bp)
 
 class CartListResource(Resource):
+    @require_role('admin')
     def get(self):
         """Get all carts - Admin only"""
         from flask import session
@@ -26,6 +27,7 @@ class CartListResource(Resource):
             'updated_at': c.updated_at.isoformat() if c.updated_at else None
         } for c in carts]
     
+    @require_auth
     def post(self):
         """Create new cart - Authenticated users only"""
         from flask import session
@@ -53,6 +55,7 @@ class CartListResource(Resource):
         }, 201
 
 class CartResource(Resource):
+    @require_auth
     def get(self, cart_id):
         """Get cart details - Owner or Admin only"""
         cart = Cart.query.get_or_404(cart_id)
@@ -63,6 +66,7 @@ class CartResource(Resource):
             'updated_at': cart.updated_at.isoformat() if cart.updated_at else None
         }
     
+    @require_auth
     def put(self, cart_id):
         """Update cart - Owner or Admin only"""
         try:
@@ -90,6 +94,7 @@ class CartResource(Resource):
             }
         }, 200
     
+    @require_auth
     def delete(self, cart_id):
         """Delete cart - Owner or Admin only"""
         try:
@@ -103,6 +108,7 @@ class CartResource(Resource):
         return {'message': 'Cart deleted successfully'}, 200
 
 class CartItemListResource(Resource):
+    @require_auth
     def get(self):
         """Get user's cart items"""
         try:
@@ -163,6 +169,7 @@ class CartItemListResource(Resource):
             traceback.print_exc()
             return [], 200
     
+    @require_auth
     def post(self):
         """Add item to cart"""
         try:
@@ -242,6 +249,7 @@ class CartItemListResource(Resource):
             return {'error': 'Failed to add item to cart'}, 500
 
 class CartItemResource(Resource):
+    @require_auth
     def get(self, cart_item_id):
         """Get cart item details"""
         try:
@@ -255,6 +263,7 @@ class CartItemResource(Resource):
         except Exception as e:
             return {'error': 'Cart item not found'}, 404
     
+    @require_auth
     def put(self, cart_item_id):
         """Update cart item quantity"""
         try:
@@ -296,6 +305,7 @@ class CartItemResource(Resource):
             db.session.rollback()
             return {'error': 'Failed to update cart item'}, 500
     
+    @require_auth
     def delete(self, cart_item_id):
         """Delete cart item"""
         try:
@@ -325,6 +335,7 @@ class CartItemResource(Resource):
             return {'error': 'Failed to delete cart item'}, 500
 
 class ClearCartResource(Resource):
+    @require_auth
     def delete(self):
         """Clear user's cart"""
         try:

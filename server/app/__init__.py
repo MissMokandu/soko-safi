@@ -29,26 +29,22 @@ def create_app():
     
     # Cloudinary configuration removed - handled by frontend
     
-    # JWT configuration
-    from flask_jwt_extended import JWTManager
-    from datetime import timedelta
-    flask_app.config['JWT_SECRET_KEY'] = secret_key
-    flask_app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
-    jwt = JWTManager(flask_app)
-    
     # Initialize extensions
     db.init_app(flask_app)
     session.init_app(flask_app)
     # Enable CORS for API routes and allow credentials (cookies/session)
     from .extensions import cors, socketio
-    cors.init_app(flask_app, resources={
-        r"/api/*": {
-            "origins": ["https://soko-safi.vercel.app", "http://localhost:5173", "http://127.0.0.1:5173"],
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
-            "supports_credentials": True
-        }
-    }, supports_credentials=True)
+    cors.init_app(flask_app, 
+        supports_credentials=True,
+        origins=["https://soko-safi.vercel.app", "http://localhost:5173", "http://127.0.0.1:5173"]
+    )
+    
+    # Production session cookie config
+    if os.getenv('FLASK_ENV') == 'production':
+        flask_app.config.update(
+            SESSION_COOKIE_SAMESITE='None',
+            SESSION_COOKIE_SECURE=True
+        )
     socketio.init_app(flask_app)
     
     # Import models to ensure they are registered

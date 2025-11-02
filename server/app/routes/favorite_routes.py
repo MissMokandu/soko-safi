@@ -6,12 +6,14 @@ Handles CRUD operations for favorites
 from flask_restful import Resource, Api
 from flask import Blueprint, request
 from app.models import db, Favorite
+from app.auth import require_auth, require_role
 
 
 favorite_bp = Blueprint('favorite_bp', __name__)
 favorite_api = Api(favorite_bp)
 
 class FavoriteListResource(Resource):
+    @require_auth
     def get(self):
         """Get favorites - Admin gets all, users get their own favorites"""
         from flask import session
@@ -60,6 +62,7 @@ class FavoriteListResource(Resource):
 
         return enhanced_favorites
     
+    @require_auth
     def post(self):
         """Create new favorite - Authenticated users only"""
         from flask import session
@@ -114,6 +117,7 @@ class FavoriteListResource(Resource):
         }, 201
 
 class FavoriteResource(Resource):
+    @require_auth
     def get(self, favorite_id):
         """Get favorite details - Owner or Admin only"""
         favorite = Favorite.query.get_or_404(favorite_id)
@@ -124,6 +128,7 @@ class FavoriteResource(Resource):
             'created_at': favorite.created_at.isoformat() if favorite.created_at else None
         }
     
+    @require_auth
     def put(self, favorite_id):
         """Update favorite - Owner or Admin only"""
         favorite = Favorite.query.get_or_404(favorite_id)
@@ -153,6 +158,7 @@ class FavoriteResource(Resource):
             }
         }, 200
     
+    @require_auth
     def delete(self, favorite_id):
         """Delete favorite - Owner or Admin only"""
         from flask import session
@@ -185,6 +191,7 @@ class FavoriteResource(Resource):
         return {'message': 'Favorite deleted successfully'}, 200
 
 class FavoriteByProductResource(Resource):
+    @require_auth
     def delete(self, product_id):
         """Delete favorite by product ID - Owner only"""
         from flask import session

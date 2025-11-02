@@ -2,6 +2,7 @@ from flask_restful import Resource, Api
 from flask import Blueprint, request, session
 from app.models.product import Product
 from app.models import db
+from app.auth import require_auth, require_role
 
 product_bp = Blueprint('product_bp', __name__)
 product_api = Api(product_bp)
@@ -24,6 +25,7 @@ class ProductListResource(Resource):
         except Exception as e:
             return []
     
+    @require_role('artisan')
     def post(self):
         try:
             if request.is_json:
@@ -102,6 +104,7 @@ class ProductResource(Resource):
         except Exception:
             return {'error': 'Product not found'}, 404
     
+    @require_auth
     def put(self, product_id):
         try:
             product = Product.query.get(product_id)
@@ -126,6 +129,7 @@ class ProductResource(Resource):
             db.session.rollback()
             return {'error': 'Failed to update product'}, 500
     
+    @require_auth
     def delete(self, product_id):
         try:
             product = Product.query.get(product_id)

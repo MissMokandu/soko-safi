@@ -5,7 +5,6 @@ Handles user registration, login, logout, and profile management
 
 from flask import Blueprint, request, jsonify, session
 from flask_restful import Resource, Api
-from flask_jwt_extended import create_access_token
 from app.models import db, User, UserRole
 from app.auth import hash_password, verify_password, login_user, logout_user, get_current_user, require_auth, require_ownership_or_role
 import re
@@ -102,12 +101,8 @@ class RegisterResource(Resource):
             # Log in the user automatically after registration
             login_user(user.id, user.role.value)
             
-            # Create JWT token
-            access_token = create_access_token(identity=user.id)
-            
             return {
                 'message': 'User registered successfully',
-                'token': access_token,
                 'user': {
                     'id': user.id,
                     'email': user.email,
@@ -163,14 +158,8 @@ class LoginResource(Resource):
             # Log in the user
             login_user(user.id, user.role.value)
             
-            # Create JWT token
-            access_token = create_access_token(identity=user.id)
-            
-            print(f"[BACKEND_LOGIN] Generated token for user {user.id}: {access_token[:20]}...")
-            
             return {
                 'message': 'Login successful',
-                'token': access_token,
                 'user': {
                     'id': user.id,
                     'email': user.email,
@@ -193,18 +182,9 @@ class LogoutResource(Resource):
         """Handle CORS preflight request"""
         return {}, 200
     
-    @require_auth
-    def post(self):
-        try:
-            logout_user()
-            return {
-                'message': 'Logout successful'
-            }, 200
-        except Exception as e:
-            return {
-                'error': 'Logout failed',
-                'message': 'An error occurred during logout'
-            }, 500
+    def delete(self):
+        session['user_id'] = None
+        return {'message': '204: No Content'}, 204
 
 class ProfileResource(Resource):
     """Handle user profile operations"""
@@ -346,23 +326,28 @@ class ChangePasswordResource(Resource):
                 'message': 'An error occurred while changing password'
             }, 500
 
-class SessionResource(Resource):
+class CheckSession(Resource):
     """Handle session information"""
     
     def get(self):
         """Get current session info"""
-        current_user = get_current_user()
-        
-        if current_user:
+        user = User.query.filter(User.id == session.get('user_id')).first()
+        if user:
             return {
                 'authenticated': True,
-                'user': current_user
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'full_name': user.full_name,
+                    'role': user.role.value,
+                    'is_verified': user.is_verified
+                }
             }, 200
         else:
             return {
                 'authenticated': False,
-                'user': None
-            }, 200
+                'message': '401: Not Authorized'
+            }, 401
 
 class ResetPasswordResource(Resource):
     """Handle password reset requests"""
@@ -405,5 +390,5 @@ auth_api.add_resource(LoginResource, '/login')
 auth_api.add_resource(LogoutResource, '/logout')
 auth_api.add_resource(ProfileResource, '/profile')
 auth_api.add_resource(ChangePasswordResource, '/change-password')
-auth_api.add_resource(SessionResource, '/session')
+auth_api.add_resource(CheckSession, '/check_session')
 auth_api.add_resource(ResetPasswordResource, '/reset-password')

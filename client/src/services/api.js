@@ -1,15 +1,11 @@
-// Use the Vite dev proxy in development (keeps requests same-origin so cookies/sessions work).
-// In production rely on the configured VITE_API_URL (e.g. https://api.example.com/api)
-const API_URL = import.meta.env.DEV ? "/api" : import.meta.env.VITE_API_URL;
+// Use proxy in dev, full URL in production
+const API_URL = import.meta.env.DEV ? "/api" : (import.meta.env.VITE_API_URL || "https://soko-safi-1.onrender.com/api");
 
-// Import error handler and secure storage
-let logError, handleAuthError, secureStorage;
+// Import error handler
+let logError;
 try {
   const errorHandler = await import('../utils/errorHandler');
-  const storage = await import('../utils/secureStorage');
   logError = errorHandler.logError;
-  handleAuthError = errorHandler.handleAuthError;
-  secureStorage = storage.secureStorage;
 } catch {
 }
 
@@ -18,18 +14,13 @@ const apiRequest = async (endpoint, options = {}) => {
   try {
     const url = `${API_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
     
-    // Add JWT token if available
-    const token = secureStorage?.getToken() || localStorage.getItem('token');
     console.log(`[API_REQUEST] ${options.method || 'GET'} ${endpoint}`);
     console.log(`[API_REQUEST] Full URL: ${url}`);
-    console.log(`[API_REQUEST] Token exists: ${!!token}`);
-    console.log(`[API_REQUEST] Token value: ${token ? token.substring(0, 20) + '...' : 'none'}`);
     
     const config = {
       method: "GET",
       headers: {
         Accept: "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
         ...options.headers,
       },
       credentials: "include", // Include cookies for cross-origin requests
@@ -74,11 +65,8 @@ const apiRequest = async (endpoint, options = {}) => {
       });
       
       if (response.status === 401) {
-        console.log(`[AUTH_ERROR] 401 Unauthorized - clearing tokens`);
+        console.log(`[AUTH_ERROR] 401 Unauthorized`);
         logError && logError(error, `API_AUTH_ERROR: ${endpoint}`);
-        // Clear invalid token
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
       }
       
       throw error;
@@ -150,15 +138,15 @@ export const api = {
     },
     logout: async () => {
       try {
-        return await apiRequest("/auth/logout", { method: "POST" });
+        return await apiRequest("/auth/logout", { method: "DELETE" });
       } catch (error) {
         return { success: true }; // Always succeed locally
       }
     },
-    getSession: async () => {
+    checkSession: async () => {
       try {
         console.log('[AUTH_SESSION] Checking session');
-        const result = await apiRequest("/auth/session");
+        const result = await apiRequest("/auth/check_session");
         console.log('[AUTH_SESSION] Session result:', result);
         return result;
       } catch (error) {
