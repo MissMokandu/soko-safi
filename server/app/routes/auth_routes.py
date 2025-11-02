@@ -183,8 +183,8 @@ class LogoutResource(Resource):
         return {}, 200
     
     def delete(self):
-        session['user_id'] = None
-        return {'message': '204: No Content'}, 204
+        session.clear()
+        return {'message': 'Logout successful'}, 200
 
 class ProfileResource(Resource):
     """Handle user profile operations"""
@@ -335,9 +335,8 @@ class CheckSession(Resource):
             user_id = session.get('user_id')
             if not user_id:
                 return {
-                    'authenticated': False,
-                    'message': '401: Not Authorized'
-                }, 401
+                    'authenticated': False
+                }, 200
             
             user = User.query.filter(User.id == user_id).first()
             if user:
@@ -353,15 +352,13 @@ class CheckSession(Resource):
                 }, 200
             else:
                 return {
-                    'authenticated': False,
-                    'message': '401: Not Authorized'
-                }, 401
+                    'authenticated': False
+                }, 200
         except Exception as e:
             return {
                 'authenticated': False,
-                'error': 'Session check failed',
-                'message': 'An error occurred while checking session'
-            }, 500
+                'error': 'Session check failed'
+            }, 200
 
 class ResetPasswordResource(Resource):
     """Handle password reset requests"""
