@@ -14,24 +14,30 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     console.log('[AUTH_CONTEXT] Starting checkAuth');
+    console.log('[AUTH_CONTEXT] Current page URL:', window.location.href);
+    console.log('[AUTH_CONTEXT] Current pathname:', window.location.pathname);
     setError(null);
     
     try {
       const data = await api.auth.checkSession();
       console.log('[AUTH_CONTEXT] Session check result:', data);
+      console.log('[AUTH_CONTEXT] Page after session check:', window.location.pathname);
       
       if (data?.authenticated && data?.user) {
-        console.log('[AUTH_CONTEXT] User authenticated, setting user');
+        console.log('[AUTH_CONTEXT] User authenticated, setting user:', data.user);
         setUser(data.user);
+        console.log('[AUTH_CONTEXT] User set successfully, current page:', window.location.pathname);
       } else {
         console.log('[AUTH_CONTEXT] User not authenticated, clearing user');
+        console.log('[AUTH_CONTEXT] Current page when not authenticated:', window.location.pathname);
         setUser(null);
       }
     } catch (error) {
       console.error('[AUTH_CONTEXT] Session check failed:', error);
+      console.log('[AUTH_CONTEXT] Error occurred on page:', window.location.pathname);
       setUser(null);
     } finally {
-      console.log('[AUTH_CONTEXT] Setting loading to false');
+      console.log('[AUTH_CONTEXT] Setting loading to false, final page:', window.location.pathname);
       setLoading(false);
     }
   };
@@ -124,6 +130,14 @@ export const AuthProvider = ({ children }) => {
     isArtisan: user?.role?.toLowerCase() === 'artisan',
     isBuyer: user?.role?.toLowerCase() === 'buyer',
   };
+  
+  console.log('[AUTH_CONTEXT] Current auth state:', {
+    user: !!user,
+    loading,
+    isAuthenticated: !!user,
+    userRole: user?.role,
+    currentPage: window.location.pathname
+  });
 
   return (
     <AuthContext.Provider value={value}>
