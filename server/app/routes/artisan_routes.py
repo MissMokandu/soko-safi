@@ -215,35 +215,70 @@ class ArtisanSocialResource(Resource):
 
 class ArtisanDashboardResource(Resource):
     def get(self):
-        """Get artisan dashboard statistics - Public access with safe defaults"""
+        """Get artisan dashboard statistics - Artisan only"""
         try:
             import traceback
             from flask import session, current_app
-            
+
             current_app.logger.info("Artisan dashboard accessed")
-            
-            # Return safe defaults regardless of authentication
+
+            # Check if user is authenticated and is an artisan
+            user_id = session.get('user_id')
+            user_role = session.get('user_role')
+
+            if not user_id or user_role != 'artisan':
+                return {
+                    'stats': {
+                        'total_products': 0,
+                        'total_orders': 0,
+                        'total_revenue': 0
+                    },
+                    'products': [],
+                    'orders': []
+                }, 200
+
+            # Get artisan's products count
+            total_products = Product.query.filter_by(artisan_id=user_id, status='active').count()
+
+            # Get total orders (orders containing artisan's products)
+            from app.models.order import Order, OrderItem
+            from sqlalchemy import func
+
+            # Get all order items for this artisan
+            order_items = db.session.query(OrderItem).filter_by(artisan_id=user_id).subquery()
+
+            # Count distinct orders
+            total_orders = db.session.query(func.count(func.distinct(order_items.c.order_id))).scalar() or 0
+
+            # Calculate total revenue from completed orders
+            total_revenue = db.session.query(func.sum(OrderItem.price * OrderItem.quantity)).filter(
+                OrderItem.artisan_id == user_id,
+                OrderItem.order_id.in_(
+                    db.session.query(Order.id).filter(Order.status == 'completed')
+                )
+            ).scalar() or 0
+
             response_data = {
                 'stats': {
-                    'total_products': 0,
-                    'total_orders': 0,
-                    'total_revenue': 0
+                    'total_products': total_products,
+                    'total_orders': total_orders,
+                    'total_revenue': float(total_revenue)
                 },
                 'products': [],
                 'orders': []
             }
-            
+
             current_app.logger.info(f"Dashboard response: {response_data}")
             return response_data, 200
 
         except Exception as e:
             import traceback
             from flask import current_app
-            
+
             error_trace = traceback.format_exc()
             current_app.logger.error(f"Dashboard error: {e}")
             current_app.logger.error(f"Full traceback: {error_trace}")
-            
+
             return {
                 'stats': {
                     'total_products': 0,
