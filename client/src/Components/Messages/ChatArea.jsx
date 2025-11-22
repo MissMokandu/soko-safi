@@ -39,11 +39,17 @@ const ChatArea = ({
               <ArrowLeft className="w-5 h-5" />
             </button>
           )}
-          <img 
-            src={currentConversation.artisan.avatar} 
-            alt={currentConversation.artisan.name}
-            className="w-10 h-10 rounded-full object-cover"
-          />
+          {currentConversation.artisan.profile_picture_url ? (
+            <img 
+              src={currentConversation.artisan.profile_picture_url} 
+              alt={currentConversation.artisan.name}
+              className="w-10 h-10 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+              <User className="w-5 h-5 text-gray-600" />
+            </div>
+          )}
           <div>
             <Link 
               to={`/artisan/${currentConversation.artisan.id}`}
@@ -67,7 +73,11 @@ const ChatArea = ({
           </div>
         )}
         {filteredMessages.map((message) => (
-          <MessageBubble key={message.id} message={message} />
+          <MessageBubble 
+            key={message.id} 
+            message={message} 
+            senderAvatar={message.sender === 'buyer' ? null : currentConversation.artisan.profile_picture_url}
+          />
         ))}
       </div>
 

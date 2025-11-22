@@ -26,6 +26,7 @@ const BuyerDashboard = lazy(() => import("./Pages/BuyerDashboard"));
 const ArtisanDashboard = lazy(() => import("./Pages/ArtisanDashboard"));
 const ArtisanProfilePage = lazy(() => import("./Pages/ArtisanProfilePage"));
 const ProfilePage = lazy(() => import("./Pages/ProfilePage"));
+const AdminDashboard = lazy(() => import("./Pages/AdminDashboard"));
 
 // Loading spinner for Suspense fallback
 const PageLoader = () => (
@@ -232,6 +233,16 @@ function App() {
                       <ErrorBoundary>
                         <ProtectedRoute>
                           <ProfilePage />
+                        </ProtectedRoute>
+                      </ErrorBoundary>
+                    }
+                  />
+                  <Route
+                    path="/admin"
+                    element={
+                      <ErrorBoundary>
+                        <ProtectedRoute requiredRole="admin">
+                          <AdminDashboard />
                         </ProtectedRoute>
                       </ErrorBoundary>
                     }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Diamond, ShoppingCart, MessageSquare, User, Menu, X, Heart, LogOut } from 'lucide-react'
+import { Diamond, ShoppingCart, MessageSquare, User, Menu, X, Heart, LogOut, Settings } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useCart } from '../../hooks/useCart.jsx'
 import { getExploreLink } from '../../utils/navigation'
@@ -77,6 +77,19 @@ const Navbar = ({ showAuthButtons = true }) => {
                   Sign Up
                 </Link>
               </div>
+            )}
+
+            {/* Admin Dashboard Link */}
+            {user && user.role === 'admin' && (
+              <Link
+                to="/admin"
+                className={`hidden lg:flex items-center p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors ${
+                  isActive('/admin') ? 'text-primary-600 bg-primary-50' : ''
+                }`}
+                title="Admin Dashboard"
+              >
+                <Settings className="w-5 h-5" />
+              </Link>
             )}
 
             {/* Desktop User Menu */}
@@ -185,6 +198,24 @@ const Navbar = ({ showAuthButtons = true }) => {
 
             {user && (
               <div className="pt-4 border-t border-gray-200 space-y-2">
+                {user.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    className={`block px-3 py-3 rounded-lg font-medium transition-colors ${
+                      isActive('/admin') ? 'text-primary-600 bg-primary-50' : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Admin Dashboard
+                  </Link>
+                )}
+                <Link
+                  to="/profile"
+                  className="block px-3 py-3 text-gray-700 hover:text-primary-600 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Profile
+                </Link>
                 <Link
                   to="/cart"
                   className="flex items-center justify-between px-3 py-3 text-gray-700 hover:text-primary-600 font-medium rounded-lg hover:bg-gray-50 transition-colors"

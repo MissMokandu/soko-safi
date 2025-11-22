@@ -404,6 +404,7 @@ class ArtisanReviewsResource(Resource):
                 'body': review.Review.body,
                 'created_at': review.Review.created_at.isoformat() if review.Review.created_at else None,
                 'user_name': review.User.full_name,
+                'user_profile_picture_url': review.User.profile_picture_url,
                 'product_title': review.Product.title,
                 'product_id': review.Product.id
             } for review in reviews], 200

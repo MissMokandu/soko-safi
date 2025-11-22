@@ -31,8 +31,11 @@ const ProductDetailPage = () => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
-        const productData = await api.products.getById(id);
-        setProduct(productData);
+        const [productData, reviewsData] = await Promise.all([
+          api.products.getById(id),
+          api.reviews.getByProduct(id)
+        ]);
+        setProduct({ ...productData, reviews: reviewsData });
       } catch (error) {
         setError("Product not found");
       } finally {
@@ -477,11 +480,17 @@ const ProductDetailPage = () => {
                   Meet the Artisan
                 </h3>
                 <div className="flex items-center space-x-4 mb-4">
-                  <img
-                    src={productWithDefaults.artisan.avatar}
-                    alt={productWithDefaults.artisan.name}
-                    className="w-16 h-16 rounded-full object-cover"
-                  />
+                  {productWithDefaults.artisan.profile_picture_url ? (
+                    <img
+                      src={productWithDefaults.artisan.profile_picture_url}
+                      alt={productWithDefaults.artisan.name}
+                      className="w-16 h-16 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center">
+                      <User className="w-8 h-8 text-gray-600" />
+                    </div>
+                  )}
                   <div>
                     <h4 className="font-semibold text-gray-900">
                       {productWithDefaults.artisan.name}
@@ -560,11 +569,17 @@ const ProductDetailPage = () => {
                   <div key={review.id} className="border-b border-gray-100 pb-8 last:border-0 last:pb-0">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-3">
-                        <img
-                          src={review.avatar}
-                          alt={review.user}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
+                        {review.user_profile_picture_url ? (
+                          <img
+                            src={review.user_profile_picture_url}
+                            alt={review.user}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
+                            <User className="w-6 h-6 text-gray-600" />
+                          </div>
+                        )}
                         <div>
                           <div className="flex items-center space-x-2">
                             <p className="font-semibold text-gray-900">{review.user}</p>

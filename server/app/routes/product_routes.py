@@ -86,7 +86,7 @@ class ProductResource(Resource):
                         'id': artisan.id,
                         'full_name': artisan.full_name,
                         'email': artisan.email,
-                        'profile_image': getattr(artisan, 'profile_image', None)
+                        'profile_picture_url': artisan.profile_picture_url
                     }
             
             return {
@@ -143,5 +143,37 @@ class ProductResource(Resource):
             db.session.rollback()
             return {'error': 'Failed to delete product'}, 500
 
+class ProductReviewsResource(Resource):
+    def get(self, product_id):
+        """Get reviews for a specific product - Public access"""
+        try:
+            from app.models.review import Review
+            from app.models.user import User
+            
+            # Get reviews for this product with user information
+            reviews = db.session.query(Review, User).join(
+                User, Review.user_id == User.id
+            ).filter(
+                Review.product_id == product_id
+            ).order_by(Review.created_at.desc()).all()
+            
+            return [{
+                'id': review.Review.id,
+                'rating': review.Review.rating,
+                'title': review.Review.title,
+                'body': review.Review.body,
+                'comment': review.Review.body,  # Alias for compatibility
+                'created_at': review.Review.created_at.isoformat() if review.Review.created_at else None,
+                'date': review.Review.created_at.strftime('%B %d, %Y') if review.Review.created_at else None,
+                'user': review.User.full_name,
+                'user_name': review.User.full_name,  # Alias for compatibility
+                'user_profile_picture_url': review.User.profile_picture_url,
+                'verified': True,  # Default to verified for now
+                'helpful': 0  # Default helpful count
+            } for review in reviews], 200
+        except Exception as e:
+            return [], 200
+
 product_api.add_resource(ProductListResource, '/')
 product_api.add_resource(ProductResource, '/<product_id>')
+product_api.add_resource(ProductReviewsResource, '/<product_id>/reviews')

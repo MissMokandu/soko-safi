@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Loader } from 'lucide-react'
+import { Loader, User } from 'lucide-react'
 
 const ConversationList = ({ 
   conversations, 
@@ -52,11 +52,17 @@ const ConversationList = ({
               }`}
             >
               <div className="relative">
-                <img 
-                  src={conversation.artisan.avatar} 
-                  alt={conversation.artisan.name}
-                  className="w-12 h-12 rounded-full object-cover"
-                />
+                {conversation.artisan.profile_picture_url ? (
+                  <img 
+                    src={conversation.artisan.profile_picture_url} 
+                    alt={conversation.artisan.name}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
+                    <User className="w-6 h-6 text-gray-600" />
+                  </div>
+                )}
                 {conversation.artisan.online && (
                   <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                 )}

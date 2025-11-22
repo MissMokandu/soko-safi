@@ -6,6 +6,7 @@ Handles CRUD operations for reviews
 from flask_restful import Resource, Api
 from flask import Blueprint, request
 from app.models import db, Review
+from app.models.user import User
 from app.auth import require_auth, require_role, require_ownership_or_role
 
 review_bp = Blueprint('review_bp', __name__)
@@ -14,15 +15,17 @@ review_api = Api(review_bp)
 class ReviewListResource(Resource):
     def get(self):
         """Get all reviews - Public access"""
-        reviews = Review.query.all()
+        reviews = db.session.query(Review, User).join(User, Review.user_id == User.id).all()
         return [{
-            'id': r.id,
-            'product_id': r.product_id,
-            'user_id': r.user_id,
-            'rating': r.rating,
-            'comment': r.body,
-            'created_at': r.created_at.isoformat() if r.created_at else None,
-            'updated_at': r.updated_at.isoformat() if r.updated_at else None
+            'id': r.Review.id,
+            'product_id': r.Review.product_id,
+            'user_id': r.Review.user_id,
+            'rating': r.Review.rating,
+            'comment': r.Review.body,
+            'user': r.User.full_name,
+            'user_profile_picture_url': r.User.profile_picture_url,
+            'created_at': r.Review.created_at.isoformat() if r.Review.created_at else None,
+            'updated_at': r.Review.updated_at.isoformat() if r.Review.updated_at else None
         } for r in reviews]
     
     @require_auth
@@ -60,13 +63,19 @@ class ReviewListResource(Resource):
 class ReviewResource(Resource):
     def get(self, review_id):
         """Get review details - Public access"""
-        review = Review.query.get_or_404(review_id)
+        result = db.session.query(Review, User).join(User, Review.user_id == User.id).filter(Review.id == review_id).first()
+        if not result:
+            return {'error': 'Review not found'}, 404
+        
+        review, user = result
         return {
             'id': review.id,
             'product_id': review.product_id,
             'user_id': review.user_id,
             'rating': review.rating,
             'comment': review.body,
+            'user': user.full_name,
+            'user_profile_picture_url': user.profile_picture_url,
             'created_at': review.created_at.isoformat() if review.created_at else None,
             'updated_at': review.updated_at.isoformat() if review.updated_at else None
         }

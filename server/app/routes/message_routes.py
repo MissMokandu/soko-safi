@@ -233,6 +233,7 @@ class MessageConversationsResource(Resource):
                         'id': partner_id,
                         'name': partner.full_name or 'Unknown User',
                         'avatar': avatar_url,
+                        'profile_picture_url': avatar_url,
                         'online': False  # TODO: Implement online status
                     },
                     'lastMessage': msg.message_text,
@@ -359,6 +360,7 @@ class ConversationInitResource(Resource):
                         'id': user_id,
                         'name': target_user.full_name or 'Unknown User',
                         'avatar': avatar_url,
+                        'profile_picture_url': avatar_url,
                         'online': False
                     },
                     'lastMessage': existing_message.message_text,
@@ -379,6 +381,7 @@ class ConversationInitResource(Resource):
                     'id': user_id,
                     'name': target_user.full_name or 'Unknown User',
                     'avatar': avatar_url,
+                    'profile_picture_url': avatar_url,
                     'online': False
                 },
                 'lastMessage': 'Start a conversation...',

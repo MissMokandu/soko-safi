@@ -393,7 +393,14 @@ export const api = {
         return []
       }
     },
-    getByProduct: (productId) => apiRequest(`/reviews/product/${productId}`),
+    getByProduct: async (productId) => {
+      try {
+        const reviews = await apiRequest(`/products/${productId}/reviews`);
+        return Array.isArray(reviews) ? reviews : [];
+      } catch (error) {
+        return [];
+      }
+    },
     create: (data) =>
       apiRequest("/reviews/", {
         method: "POST",
@@ -651,6 +658,82 @@ export const api = {
       // Use Cloudinary directly for better performance
       const { uploadToCloudinary } = await import("./cloudinary");
       return uploadToCloudinary(file);
+    },
+  },
+
+  // Admin endpoints
+  admin: {
+    getDashboard: async () => {
+      try {
+        return await apiRequest("/admin/dashboard");
+      } catch (error) {
+        throw new Error("Failed to fetch admin dashboard data");
+      }
+    },
+    getUsers: async (params = {}) => {
+      try {
+        const query = Object.keys(params).length
+          ? "?" + new URLSearchParams(params).toString()
+          : "";
+        return await apiRequest(`/admin/users${query}`);
+      } catch (error) {
+        throw new Error("Failed to fetch users");
+      }
+    },
+    getUser: async (userId) => {
+      try {
+        return await apiRequest(`/admin/users/${userId}`);
+      } catch (error) {
+        throw new Error("Failed to fetch user");
+      }
+    },
+    updateUser: async (userId, data) => {
+      try {
+        return await apiRequest(`/admin/users/${userId}`, {
+          method: "PUT",
+          body: JSON.stringify(data),
+        });
+      } catch (error) {
+        throw new Error("Failed to update user");
+      }
+    },
+    deleteUser: async (userId) => {
+      try {
+        return await apiRequest(`/admin/users/${userId}`, {
+          method: "DELETE",
+        });
+      } catch (error) {
+        throw new Error("Failed to delete user");
+      }
+    },
+    getProducts: async (params = {}) => {
+      try {
+        const query = Object.keys(params).length
+          ? "?" + new URLSearchParams(params).toString()
+          : "";
+        return await apiRequest(`/admin/products${query}`);
+      } catch (error) {
+        throw new Error("Failed to fetch products");
+      }
+    },
+    updateProduct: async (productId, data) => {
+      try {
+        return await apiRequest(`/admin/products/${productId}`, {
+          method: "PUT",
+          body: JSON.stringify(data),
+        });
+      } catch (error) {
+        throw new Error("Failed to update product");
+      }
+    },
+    deleteProduct: async (productId) => {
+      try {
+        return await apiRequest(`/admin/products/${productId}`, {
+          method: "DELETE",
+        });
+      } catch (error) {
+        throw new Error("Failed to delete product");
+      }
     },
   },
 };

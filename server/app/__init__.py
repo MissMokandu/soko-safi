@@ -69,6 +69,7 @@ def create_app():
     from app.routes.artisan_routes import artisan_bp
     from app.routes.upload_routes import upload_bp
     from app.routes.collection_routes import collection_bp
+    from app.routes.admin_routes import admin_bp
     
     flask_app.register_blueprint(auth_bp, url_prefix='/api/auth')
     flask_app.register_blueprint(user_bp, url_prefix='/api/users')
@@ -85,6 +86,7 @@ def create_app():
     flask_app.register_blueprint(artisan_bp, url_prefix='/api/artisan')
     flask_app.register_blueprint(upload_bp, url_prefix='/api/upload')
     flask_app.register_blueprint(collection_bp, url_prefix='/api/collections')
+    flask_app.register_blueprint(admin_bp, url_prefix='/api/admin')
     
     # Routes
     @flask_app.route('/')

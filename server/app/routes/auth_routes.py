@@ -108,7 +108,8 @@ class RegisterResource(Resource):
                     'email': user.email,
                     'full_name': user.full_name,
                     'role': user.role.value,
-                    'is_verified': user.is_verified
+                    'is_verified': user.is_verified,
+                    'profile_picture_url': user.profile_picture_url
                 }
             }, 201
             
@@ -168,7 +169,8 @@ class LoginResource(Resource):
                     'email': user.email,
                     'full_name': user.full_name,
                     'role': user.role.value,
-                    'is_verified': user.is_verified
+                    'is_verified': user.is_verified,
+                    'profile_picture_url': user.profile_picture_url
                 }
             }, 200
             
@@ -214,6 +216,7 @@ class ProfileResource(Resource):
                     'phone': user.phone,
                     'location': user.location,
                     'description': user.description,
+                    'profile_picture_url': user.profile_picture_url,
                     'is_verified': user.is_verified,
                     'created_at': user.created_at.isoformat() if user.created_at else None
                 }
@@ -249,6 +252,8 @@ class ProfileResource(Resource):
                 user.location = data['location'].strip()
             if 'description' in data:
                 user.description = data['description'].strip()
+            if 'profile_picture_url' in data:
+                user.profile_picture_url = data['profile_picture_url'].strip()
             
             db.session.commit()
             
@@ -262,6 +267,7 @@ class ProfileResource(Resource):
                     'phone': user.phone,
                     'location': user.location,
                     'description': user.description,
+                    'profile_picture_url': user.profile_picture_url,
                     'is_verified': user.is_verified
                 }
             }, 200
@@ -359,7 +365,8 @@ class CheckSessionResource(Resource):
                         'email': user.email,
                         'full_name': user.full_name,
                         'role': user.role.value,
-                        'is_verified': user.is_verified
+                        'is_verified': user.is_verified,
+                        'profile_picture_url': user.profile_picture_url
                     }
                 }, 200
             else:
