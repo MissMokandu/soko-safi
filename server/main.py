@@ -5,7 +5,11 @@ import os
 
 try:
     app = create_app()
+    print("App created successfully!")
 except Exception as e:
+    print(f"Error creating app: {e}")
+    import traceback
+    traceback.print_exc()
     exit(1)
 
 if __name__ == '__main__':
@@ -22,4 +26,7 @@ if __name__ == '__main__':
         
         socketio.run(app, debug=debug_mode, host=host, port=port, allow_unsafe_werkzeug=True)
     except Exception as e:
+        print(f"Error running app: {e}")
+        import traceback
+        traceback.print_exc()
         exit(1)
